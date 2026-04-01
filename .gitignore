@@ -9,3 +9,6 @@ target/
 # OS
 .DS_Store
 Thumbs.db
+
+#Config
+db.xml
