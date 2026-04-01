@@ -47,5 +47,4 @@ public class TaiKhoan {
 		this.role = role;
 	}
 
-    // Getter & Setter
 }
