@@ -107,5 +107,4 @@ public class GoiThue {
 	public void setGiamGia(float giamGia) {
 		this.giamGia = giamGia;
 	}
-
 }

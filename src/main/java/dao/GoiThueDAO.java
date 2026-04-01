@@ -22,9 +22,6 @@ public class GoiThueDAO {
 	}
 
 	public void themGoiThue(GoiThue goiThue) throws IllegalArgumentException {
-		if (kiemTraTonTai(goiThue)) {
-			throw new IllegalArgumentException("Gói thuê đã tồn tại!!!!!!!!!!!!!!!!!!");
-		}
 		String sql = "insert into GoiThue (maMauXe, maDoiTac, maChiNhanh, tenGoiThue, phuKien, giaNgay, giaGio, phuThu, giamGia) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);
@@ -42,23 +39,76 @@ public class GoiThueDAO {
 			e.printStackTrace();
 		}
 	}
+	
+	public List<GoiThue> timkiemGoiThue(String tuKhoa) {
+	    List<GoiThue> list = new ArrayList<>();
+	    
+	    boolean laSo = true;
+	    float giaTimKiem = 0;
+	    try {
+	        giaTimKiem = Float.parseFloat(tuKhoa.trim());
+	    } catch (NumberFormatException e) {
+	        laSo = false;
+	    }
 
-	public boolean kiemTraTonTai(GoiThue goiThue) {
-		String sql = "select 1 from GoiThue where tenGoiThue = ? and maMauXe = ? and maDoiTac = ?";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
-			ps.setString(1, goiThue.getTenGoiThue());
-			ps.setInt(2, goiThue.getMaMauXe());
-			ps.setInt(3, goiThue.getMaDoiTac());
-			try (ResultSet rs = ps.executeQuery()) {
-				return rs.next();
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
+	    StringBuilder sql = new StringBuilder(
+	        "select gt.* from GoiThue gt " +
+	        "join MauXe mx on gt.maMauXe = mx.maMauXe " +
+	        "where (gt.tenGoiThue like ? " +
+	        "or gt.phuKien like ? " +
+	        "or mx.hangXe like ? " +
+	        "or mx.dongXe like ?) "
+	    );
+
+	    if (laSo) {
+	        sql.append("or (gt.giaNgay >= ? and gt.giaNgay <= ? ");
+	        sql.append("or gt.giaGio >= ? and gt.giaGio <= ?) ");
+	        sql.append("order by least(abs(gt.giaNgay - ?), abs(gt.giaGio - ?)) asc");
+	    }
+
+	    try {
+	        PreparedStatement ps = con.prepareStatement(sql.toString());
+	        String chuoi = "%" + tuKhoa + "%";
+	        
+	        ps.setString(1, chuoi);
+	        ps.setString(2, chuoi);
+	        ps.setString(3, chuoi);
+	        ps.setString(4, chuoi);
+
+	        if (laSo) {
+	            float bienTrai = giaTimKiem * 0.5f;
+	            float bienPhai = giaTimKiem * 1.5f;
+	            
+	            ps.setFloat(5, bienTrai);
+	            ps.setFloat(6, bienPhai);
+	            ps.setFloat(7, bienTrai);
+	            ps.setFloat(8, bienPhai);
+	            ps.setFloat(9, giaTimKiem);
+	            ps.setFloat(10, giaTimKiem);
+	        }
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                GoiThue gt = new GoiThue();
+	                gt.setMaGoiThue(rs.getInt("maGoiThue"));
+	                gt.setMaMauXe(rs.getInt("maMauXe"));
+	                gt.setMaDoiTac(rs.getInt("maDoiTac"));
+	                gt.setMaChiNhanh(rs.getInt("maChiNhanh"));
+	                gt.setTenGoiThue(rs.getString("tenGoiThue"));
+	                gt.setPhuKien(rs.getString("phuKien"));
+	                gt.setGiaNgay(rs.getFloat("giaNgay"));
+	                gt.setGiaGio(rs.getFloat("giaGio"));
+	                gt.setPhuThu(rs.getFloat("phuThu"));
+	                gt.setGiamGia(rs.getFloat("giamGia"));
+	                list.add(gt);
+	            }
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return list;
 	}
-
+	
 	public boolean ktraSoLuong() {
 		String sql = "select count(1) from GoiThue";
 		try {
@@ -70,35 +120,5 @@ public class GoiThueDAO {
 			e.printStackTrace();
 		}
 		return false;
-	}
-
-	public List<GoiThue> timkiemGoiThue(String tuKhoa) {
-		List<GoiThue> list = new ArrayList<>();
-		String sql = "select * from GoiThue where tenGoiThue like ? or phuKien like ?";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
-			String chuoi = "%" + tuKhoa + "%";
-			ps.setString(1, chuoi);
-			ps.setString(2, chuoi);
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					GoiThue gt = new GoiThue();
-					gt.setMaGoiThue(rs.getInt("maGoiThue"));
-					gt.setMaMauXe(rs.getInt("maMauXe"));
-					gt.setMaDoiTac(rs.getInt("maDoiTac"));
-					gt.setMaChiNhanh(rs.getInt("maChiNhanh"));
-					gt.setTenGoiThue(rs.getString("tenGoiThue"));
-					gt.setPhuKien(rs.getString("phuKien"));
-					gt.setGiaNgay(rs.getFloat("giaNgay"));
-					gt.setGiaGio(rs.getFloat("giaGio"));
-					gt.setPhuThu(rs.getFloat("phuThu"));
-					gt.setGiamGia(rs.getFloat("giamGia"));
-					list.add(gt);
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return list;
 	}
 }
