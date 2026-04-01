@@ -98,7 +98,7 @@ CREATE TABLE GoiThue (
     giaNgay FLOAT,
     giaGio FLOAT,
     phuThu FLOAT,
-    giamGiaXeCu FLOAT,
+    giamGia FLOAT,
     FOREIGN KEY (maMauXe) REFERENCES MauXe(maMauXe),
     FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac),
     FOREIGN KEY (maChiNhanh) REFERENCES ChiNhanh(maChiNhanh)
