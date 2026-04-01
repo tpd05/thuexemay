@@ -196,7 +196,7 @@ CREATE TABLE DanhSachMongMuon (
 );
 
 -- 18. WishListItems
-CREATE TABLE WishListItems (
+CREATE TABLE MucDanhSachMongMuon (
     maWishList INT,
     maGoiThue INT,
     PRIMARY KEY (maWishList, maGoiThue),
