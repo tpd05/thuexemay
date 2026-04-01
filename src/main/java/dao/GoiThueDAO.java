@@ -21,7 +21,7 @@ public class GoiThueDAO {
 		}
 	}
 
-	public void themGoiThue(GoiThue goiThue) throws IllegalArgumentException {
+	public void themGoiThue(GoiThue goiThue){
 		String sql = "insert into GoiThue (maMauXe, maDoiTac, maChiNhanh, tenGoiThue, phuKien, giaNgay, giaGio, phuThu, giamGia) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		try {
 			PreparedStatement ps = con.prepareStatement(sql);

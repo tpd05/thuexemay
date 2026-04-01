@@ -21,6 +21,38 @@ public class ChiNhanhDAO {
 		}
 	}
 
+	public void themChiNhanh(ChiNhanh chiNhanh) throws SQLException {
+	    if (kiemTraTonTai(chiNhanh)) {
+	        throw new IllegalArgumentException("Chi nhánh đã tồn tại!!!");
+	    }
+
+	    String sql = "insert into ChiNhanh (maDoiTac, tenChiNhanh, diaDiem) values (?, ?, ?)";
+
+	    try (PreparedStatement ps = con.prepareStatement(sql)) {
+	        ps.setInt(1, chiNhanh.getMaDoiTac());
+	        ps.setString(2, chiNhanh.getTenChiNhanh());
+	        ps.setString(3, chiNhanh.getDiaDiem());
+
+	        ps.executeUpdate();
+	    }
+	}
+
+	public boolean kiemTraTonTai(ChiNhanh chiNhanh) {
+	    String sql = "select 1 from ChiNhanh where maDoiTac = ? and tenChiNhanh = ?";
+	    try {
+	        PreparedStatement ps = con.prepareStatement(sql);
+	        ps.setInt(1, chiNhanh.getMaDoiTac());
+	        ps.setString(2, chiNhanh.getTenChiNhanh());
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            return rs.next();
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return false;
+	}
+	
 	public List<ChiNhanh> layToanBoChiNhanh(int maDoiTac) {
 		List<ChiNhanh> list = new ArrayList<>();
 		String sql = "select * from ChiNhanh where maDoiTac = ?";
