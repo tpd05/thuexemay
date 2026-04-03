@@ -1,23 +1,13 @@
 package model;
 
 public class DoiTac {
-    private int maDoiTac;
     private int userID;
 
     public DoiTac() {}
 
-    public DoiTac(int maDoiTac, int userID) {
-        this.maDoiTac = maDoiTac;
+    public DoiTac(int userID) {
         this.userID = userID;
     }
-
-	public int getMaDoiTac() {
-		return maDoiTac;
-	}
-
-	public void setMaDoiTac(int maDoiTac) {
-		this.maDoiTac = maDoiTac;
-	}
 
 	public int getUserID() {
 		return userID;

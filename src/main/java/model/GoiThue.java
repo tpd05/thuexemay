@@ -100,6 +100,7 @@ public class GoiThue {
 		this.phuThu = phuThu;
 	}
 
+
 	public float getGiamGia() {
 		return giamGia;
 	}
