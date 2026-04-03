@@ -173,4 +173,25 @@ public class AuthService {
 		}
 		return "OK";
 	}
+	public TaiKhoan DangNhapTaiKhoan(TaiKhoan tk) {
+	    Connection con = null;
+	    try {
+	        con = Connect.getInstance().getConnect();
+
+	        boolean kt = tkdao.DangNhap(tk, con);
+	        
+	        if (kt) {
+	            return tk;
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    } finally {
+	        try {
+	            if (con != null) con.close();
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	    return null;
+	}
 }
