@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
+import model.Role;
 import model.TaiKhoan;
 import service.PasswordService;
 
@@ -16,7 +16,8 @@ public class TaiKhoanDAO {
 		try (PreparedStatement pstm = con.prepareStatement(SQL, Statement.RETURN_GENERATED_KEYS)) {
 			pstm.setString(1, tk.getUsername());
 			pstm.setString(2, tk.getPassword());
-			pstm.setString(3, tk.getRole());
+
+			pstm.setString(3, tk.getRole().name());
 			int rows = pstm.executeUpdate();
 			if (rows > 0) {
 				try (ResultSet rs = pstm.getGeneratedKeys()) {
@@ -45,7 +46,7 @@ public class TaiKhoanDAO {
 						String role = rs.getString("role");
 
 						tk.setUserID(userID);
-						tk.setRole(role);
+						tk.setRole(Role.valueOf(role));
 
 						return true;
 					}
