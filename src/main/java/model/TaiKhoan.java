@@ -1,5 +1,7 @@
 package model;
 
+import java.sql.Connection;
+
 public class TaiKhoan {
     private int userID;
     private String username;
@@ -14,6 +16,20 @@ public class TaiKhoan {
         this.password = password;
         this.role = role;
     }
+
+	public TaiKhoan(String username, String password, String role) {
+		super();
+		this.username = username;
+		this.password = password;
+		this.role = role;
+	}
+	
+
+	public TaiKhoan(String username, String password) {
+		super();
+		this.username = username;
+		this.password = password;
+	}
 
 	public int getUserID() {
 		return userID;
@@ -46,6 +62,7 @@ public class TaiKhoan {
 	public void setRole(String role) {
 		this.role = role;
 	}
+
 
     // Getter & Setter
 }
