@@ -5,19 +5,45 @@ public class NguoiDung {
     private String hoTen;
     private String soDienThoai;
     private String email;
-    private boolean trangThaiEYC;
+    private boolean trangThaieKYC;
     private String soCCCD;
 
     public NguoiDung() {}
 
-    public NguoiDung(int userID, String hoTen, String soDienThoai, String email, boolean trangThaiEYC, String soCCCD) {
+    public NguoiDung(int userID, String hoTen, String soDienThoai, String email, boolean trangThaieKYC, String soCCCD) {
         this.userID = userID;
         this.hoTen = hoTen;
         this.soDienThoai = soDienThoai;
         this.email = email;
-        this.trangThaiEYC = trangThaiEYC;
+        this.trangThaieKYC = trangThaieKYC;
         this.soCCCD = soCCCD;
     }
+
+	public NguoiDung(String hoTen, String soDienThoai, String email, boolean trangThaieKYC, String soCCCD) {
+		super();
+		this.hoTen = hoTen;
+		this.soDienThoai = soDienThoai;
+		this.email = email;
+		this.trangThaieKYC = trangThaieKYC;
+		this.soCCCD = soCCCD;
+	}
+
+	public NguoiDung(String hoTen, String soDienThoai, String email, String soCCCD) {
+		super();
+		this.hoTen = hoTen;
+		this.soDienThoai = soDienThoai;
+		this.email = email;
+		this.soCCCD = soCCCD;
+	}
+
+	public NguoiDung(int userID, String hoTen, String soDienThoai, String email, String soCCCD) {
+		super();
+		this.userID = userID;
+		this.hoTen = hoTen;
+		this.soDienThoai = soDienThoai;
+		this.email = email;
+		this.soCCCD = soCCCD;
+	}
 
 	public int getUserID() {
 		return userID;
@@ -51,12 +77,12 @@ public class NguoiDung {
 		this.email = email;
 	}
 
-	public boolean isTrangThaiEYC() {
-		return trangThaiEYC;
+	public boolean isTrangThaieKYC() {
+		return trangThaieKYC;
 	}
 
-	public void setTrangThaiEYC(boolean trangThaiEYC) {
-		this.trangThaiEYC = trangThaiEYC;
+	public void setTrangThaieKYC(boolean trangThaieKYC) {
+		this.trangThaieKYC = trangThaieKYC;
 	}
 
 	public String getSoCCCD() {
@@ -66,6 +92,4 @@ public class NguoiDung {
 	public void setSoCCCD(String soCCCD) {
 		this.soCCCD = soCCCD;
 	}
-    
-    // Getter & Setter
 }

@@ -1,19 +1,35 @@
 package model;
 
+import java.sql.Connection;
+
 public class TaiKhoan {
-    private int userID;
-    private String username;
-    private String password;
-    private String role;
+	private int userID;
+	private String username;
+	private String password;
+	private String role;
 
-    public TaiKhoan() {}
+	public TaiKhoan() {
+	}
 
-    public TaiKhoan(int userID, String username, String password, String role) {
-        this.userID = userID;
-        this.username = username;
-        this.password = password;
-        this.role = role;
-    }
+	public TaiKhoan(int userID, String username, String password, String role) {
+		this.userID = userID;
+		this.username = username;
+		this.password = password;
+		this.role = role;
+	}
+
+	public TaiKhoan(String username, String password, String role) {
+		super();
+		this.username = username;
+		this.password = password;
+		this.role = role;
+	}
+
+	public TaiKhoan(String username, String password) {
+		super();
+		this.username = username;
+		this.password = password;
+	}
 
 	public int getUserID() {
 		return userID;
@@ -46,5 +62,4 @@ public class TaiKhoan {
 	public void setRole(String role) {
 		this.role = role;
 	}
-
 }
