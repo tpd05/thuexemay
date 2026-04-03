@@ -1,6 +1,6 @@
 package model;
 
-public class KhachHang {
+public class KhachHang  {
     private int maKH;
     private int userID;
 

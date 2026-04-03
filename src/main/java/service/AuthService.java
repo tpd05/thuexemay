@@ -14,23 +14,23 @@ public class AuthService {
 	private NguoiDungDao nddao = new NguoiDungDao();
 
 	// Đăng ký tài khoản người dùng
-	public boolean DangKyTaiKhoanNguoiDung(TaiKhoan tk, NguoiDung nd) {
+	public boolean dangKyTaiKhoanNguoiDung(TaiKhoan tk, NguoiDung nd) {
 		Connection con = null;
 		try {
 			con = Connect.getInstance().getConnect();
 			con.setAutoCommit(false);
 
 			// Băm mật khẩu
-			tk.setPassword(PasswordService.BamPassword(tk.getPassword()));
+			tk.setPassword(PasswordService.bamPassword(tk.getPassword()));
 
-			int userid = tkdao.DangKy(tk, con);
+			int userid = tkdao.dangKy(tk, con);
 			if (userid == -1) {
 				con.rollback();
 				return false;
 			}
 
 			nd.setUserID(userid);
-			boolean ok = nddao.ThemNguoiDung(nd, con);
+			boolean ok = nddao.themNguoiDung(nd, con);
 
 			if (!ok) {
 				con.rollback();
@@ -65,16 +65,16 @@ public class AuthService {
 	}
 
 	// Quên mật khẩu
-	public boolean QuenMatKhauTaiKhoan(String email, String newPassword) {
+	public boolean quenMatKhauTaiKhoan(String email, String newPassword) {
 		Connection con = null;
 
 		try {
 			con = Connect.getInstance().getConnect();
 
 			// Băm mật khẩu
-			String hashed = PasswordService.BamPassword(newPassword);
+			String hashed = PasswordService.bamPassword(newPassword);
 
-			return tkdao.QuenMatKhau(email, hashed, con);
+			return tkdao.quenMatKhau(email, hashed, con);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -90,7 +90,7 @@ public class AuthService {
 	}
 
 	// Kiểm tra giá trị hợp lệ khi đăng ký
-	public String KiemTraDangKyHopLe(TaiKhoan tk, NguoiDung nd, Connection con) throws SQLException {
+	public String kiemTraDangKyHopLe(TaiKhoan tk, NguoiDung nd, Connection con) throws SQLException {
 
 		if (tk.getUsername() == null || tk.getUsername().trim().isEmpty()) {
 			return "Username không được để trống";
@@ -139,20 +139,20 @@ public class AuthService {
 			return "CCCD phải gồm 12 chữ số";
 		}
 
-		if (tkdao.KiemTraUsernameTonTai(tk.getUsername(), con)) {
+		if (tkdao.kiemTraUsernameTonTai(tk.getUsername(), con)) {
 			return "Username đã tồn tại";
 		}
 
-		if (nddao.KiemTraSoDienThoaiTonTai(nd.getSoDienThoai(), con)) {
+		if (nddao.kiemTraSoDienThoaiTonTai(nd.getSoDienThoai(), con)) {
 			return "Số điện thoại đã được sử dụng";
 		}
 
-		if (nddao.KiemTraSoCCCDTonTai(nd.getSoCCCD(), con)) {
+		if (nddao.kiemTraSoCCCDTonTai(nd.getSoCCCD(), con)) {
 			return "CCCD đã tồn tại";
 		}
 
 		if (nd.getEmail() != null && !nd.getEmail().isEmpty()) {
-			if (nddao.KiemTraEmailTonTai(nd.getEmail(), con)) {
+			if (nddao.kiemTraEmailTonTai(nd.getEmail(), con)) {
 				return "Email đã được sử dụng";
 			}
 		}
@@ -161,7 +161,7 @@ public class AuthService {
 	}
 
 	// Kiểm tra giá trị hợp lệ khi đăng nhập
-	public String KiemTraDangNhapHopLe(TaiKhoan tk, Connection con) {
+	public String kiemTraDangNhapHopLe(TaiKhoan tk, Connection con) {
 		// Username không được để trống
 		if (tk.getUsername() == null || tk.getUsername().trim().isEmpty()) {
 			return "Username không được để trống";
