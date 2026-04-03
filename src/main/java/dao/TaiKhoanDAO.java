@@ -43,7 +43,7 @@ public class TaiKhoanDAO {
                     String hashedPassword = rs.getString("password");
                     if (PasswordService.kiemTraPassword(tk.getPassword(), hashedPassword)) {
                         tk.setUserID(rs.getInt("userID"));
-                        tk.setRole(Role.valueOf(rs.getString("role"))); // ✅ util.Role.valueOf()
+                        tk.setRole(Role.valueOf(rs.getString("role")));
                         return true;
                     }
                 }
@@ -52,9 +52,10 @@ public class TaiKhoanDAO {
         return false;
     }
 
-    // Quên mật khẩu
+    // FIX: email nằm trong bảng NguoiDung, không phải TaiKhoan → dùng JOIN
     public boolean quenMatKhau(String email, String password, Connection con) throws SQLException {
-        String SQL = "update TaiKhoan set password = ? where email = ?";
+        String SQL = "update TaiKhoan t join NguoiDung nd on t.userID = nd.userID " +
+                     "set t.password = ? where nd.email = ?";
         try (PreparedStatement pstm = con.prepareStatement(SQL)) {
             pstm.setString(1, password);
             pstm.setString(2, email);

@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebFilter("/api/doitac/*")
+@WebFilter("/doitac/*")
 public class DoiTacFillter implements Filter {
 
     @Override

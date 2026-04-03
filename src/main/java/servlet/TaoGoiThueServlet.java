@@ -11,7 +11,7 @@ import dao.GoiThueDAO;
 import model.GoiThue;
 import service.KiemTraDoiTac;
 
-@WebServlet("/api/doitac/goithue")
+@WebServlet("/doitac/goithue")
 public class TaoGoiThueServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;

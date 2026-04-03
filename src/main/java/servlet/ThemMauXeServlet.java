@@ -11,7 +11,9 @@ import dao.MauXeDAO;
 import model.MauXe;
 import service.KiemTraDoiTac;
 
-@WebServlet("/api/doitac/mauxe")
+import java.util.List;
+
+@WebServlet("/doitac/mauxe")
 public class ThemMauXeServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -22,20 +24,37 @@ public class ThemMauXeServlet extends HttpServlet {
         mauXeDAO = new MauXeDAO();
     }
 
-    // GET /api/doitac/mauxe — lấy tất cả mẫu xe
+    /**
+     * GET /doitac/mauxe                   – mẫu xe của đối tác đang đăng nhập
+     * GET /doitac/mauxe?maChiNhanh=X      – lọc thêm theo chi nhánh (dùng cho dropdown xe máy / gói thuê)
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         response.setContentType("application/xml;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
+
         if (!KiemTraDoiTac.checkDoiTac(request, response)) return;
 
+        Integer maDoiTac = KiemTraDoiTac.layMaDoiTacCuaPhien(request);
+
         try {
-            var danhSach = mauXeDAO.layDanhSachMauXe();
+            List<MauXe> danhSach;
+
+            String maChiNhanhStr = request.getParameter("maChiNhanh");
+            if (maChiNhanhStr != null && !maChiNhanhStr.trim().isEmpty()) {
+                int maChiNhanh = Integer.parseInt(maChiNhanhStr.trim());
+                danhSach = mauXeDAO.layDanhSachMauXeTheoChiNhanh(maChiNhanh, maDoiTac);
+            } else {
+                danhSach = mauXeDAO.layDanhSachMauXeTheoDoiTac(maDoiTac);
+            }
+
             StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<mauXes>\n");
             for (MauXe mx : danhSach) {
                 xml.append("    <mauXe>\n")
                    .append("        <maMauXe>").append(mx.getMaMauXe()).append("</maMauXe>\n")
+                   .append("        <maChiNhanh>").append(mx.getMaChiNhanh()).append("</maChiNhanh>\n")
                    .append("        <hangXe>").append(escapeXml(mx.getHangXe())).append("</hangXe>\n")
                    .append("        <dongXe>").append(escapeXml(mx.getDongXe())).append("</dongXe>\n")
                    .append("        <doiXe>").append(mx.getDoiXe()).append("</doiXe>\n")
@@ -45,12 +64,18 @@ public class ThemMauXeServlet extends HttpServlet {
             }
             xml.append("</mauXes>");
             response.getWriter().write(xml.toString());
+
+        } catch (NumberFormatException e) {
+            guiPhanHoiXML(response, 400, "error", "Mã chi nhánh không hợp lệ");
         } catch (Exception e) {
             guiPhanHoiXML(response, 500, "error", "Lỗi hệ thống: " + e.getMessage());
         }
     }
 
-    // POST /api/doitac/mauxe — thêm mẫu xe mới
+    /**
+     * POST /doitac/mauxe – thêm mẫu xe mới.
+     * maDoiTac lấy từ session, không nhận từ form.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -62,11 +87,11 @@ public class ThemMauXeServlet extends HttpServlet {
 
         Integer maDoiTac = KiemTraDoiTac.layMaDoiTacCuaPhien(request);
 
-        String hangXe     = request.getParameter("hangXe");
-        String dongXe     = request.getParameter("dongXe");
-        String doiXeStr   = request.getParameter("doiXe");
-        String dungTichStr = request.getParameter("dungTich");
-        String urlHinhAnh = request.getParameter("urlHinhAnh");
+        String hangXe        = request.getParameter("hangXe");
+        String dongXe        = request.getParameter("dongXe");
+        String doiXeStr      = request.getParameter("doiXe");
+        String dungTichStr   = request.getParameter("dungTich");
+        String urlHinhAnh    = request.getParameter("urlHinhAnh");
         String maChiNhanhStr = request.getParameter("maChiNhanh");
 
         // Validate bắt buộc
@@ -83,7 +108,7 @@ public class ThemMauXeServlet extends HttpServlet {
             guiPhanHoiXML(response, 400, "error", "Dung tích không được để trống"); return;
         }
         if (maChiNhanhStr == null || maChiNhanhStr.trim().isEmpty()) {
-            guiPhanHoiXML(response, 400, "error", "Mã chi nhánh không được để trống"); return;
+            guiPhanHoiXML(response, 400, "error", "Chi nhánh không được để trống"); return;
         }
 
         int doiXe, maChiNhanh;
@@ -98,7 +123,7 @@ public class ThemMauXeServlet extends HttpServlet {
         }
 
         if (doiXe < 1900 || doiXe > 2100) {
-            guiPhanHoiXML(response, 400, "error", "Đời xe không hợp lệ"); return;
+            guiPhanHoiXML(response, 400, "error", "Đời xe không hợp lệ (1900–2100)"); return;
         }
         if (dungTich <= 0) {
             guiPhanHoiXML(response, 400, "error", "Dung tích phải lớn hơn 0"); return;

@@ -1,6 +1,12 @@
 package servlet;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -11,7 +17,7 @@ import dao.XeMayDAO;
 import model.XeMay;
 import service.KiemTraDoiTac;
 
-@WebServlet("/api/doitac/xemay")
+@WebServlet("/doitac/xemay")
 public class ThemXeMayServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -22,6 +28,57 @@ public class ThemXeMayServlet extends HttpServlet {
         xeMayDAO = new XeMayDAO();
     }
 
+    /**
+     * GET /doitac/xemay                   – tất cả xe máy của đối tác
+     * GET /doitac/xemay?maChiNhanh=X      – lọc theo chi nhánh
+     */
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        response.setContentType("application/xml;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
+
+        if (!KiemTraDoiTac.checkDoiTac(request, response)) return;
+
+        Integer maDoiTac = KiemTraDoiTac.layMaDoiTacCuaPhien(request);
+
+        try {
+            List<XeMay> danhSach;
+            String maChiNhanhStr = request.getParameter("maChiNhanh");
+            if (maChiNhanhStr != null && !maChiNhanhStr.trim().isEmpty()) {
+                int maChiNhanh = Integer.parseInt(maChiNhanhStr.trim());
+                danhSach = xeMayDAO.layDanhSachXeMayTheoChiNhanh(maChiNhanh, maDoiTac);
+            } else {
+                danhSach = xeMayDAO.layDanhSachXeMayTheoDoiTac(maDoiTac);
+            }
+
+            StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xeMays>\n");
+            for (XeMay xm : danhSach) {
+                xml.append("    <xeMay>\n")
+                   .append("        <maXe>").append(xm.getMaXe()).append("</maXe>\n")
+                   .append("        <maMauXe>").append(xm.getMaMauXe()).append("</maMauXe>\n")
+                   .append("        <maChiNhanh>").append(xm.getMaChiNhanh()).append("</maChiNhanh>\n")
+                   .append("        <bienSo>").append(escapeXml(xm.getBienSo())).append("</bienSo>\n")
+                   .append("        <soKhung>").append(escapeXml(xm.getSoKhung())).append("</soKhung>\n")
+                   .append("        <soMay>").append(escapeXml(xm.getSoMay())).append("</soMay>\n")
+                   .append("        <trangThai>").append(escapeXml(xm.getTrangThai())).append("</trangThai>\n");
+                // Display fields từ JOIN (nếu model có setter)
+            }
+            xml.append("</xeMays>");
+            response.getWriter().write(xml.toString());
+
+        } catch (NumberFormatException e) {
+            guiPhanHoiXML(response, 400, "error", "Mã chi nhánh không hợp lệ");
+        } catch (Exception e) {
+            guiPhanHoiXML(response, 500, "error", "Lỗi hệ thống: " + e.getMessage());
+        }
+    }
+
+    /**
+     * POST /doitac/xemay – thêm xe máy mới.
+     * maDoiTac lấy từ session, không nhận từ form.
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -66,9 +123,8 @@ public class ThemXeMayServlet extends HttpServlet {
             return;
         }
 
-        // Validate biển số: format Việt Nam cơ bản (vd: 29A-12345)
         if (!bienSo.trim().matches("^[0-9]{2}[A-Z][0-9A-Z]-[0-9]{4,5}$")) {
-            guiPhanHoiXML(response, 400, "error", "Biển số không đúng định dạng (vd: 29A-12345)"); return;
+            guiPhanHoiXML(response, 400, "error", "Biển số không đúng định dạng (VD: 20A1-12345)"); return;
         }
 
         XeMay xeMay = new XeMay();
@@ -78,7 +134,8 @@ public class ThemXeMayServlet extends HttpServlet {
         xeMay.setBienSo(bienSo.trim().toUpperCase());
         xeMay.setSoKhung(soKhung.trim().toUpperCase());
         xeMay.setSoMay(soMay.trim().toUpperCase());
-        xeMay.setTrangThai(trangThai != null ? trangThai.trim() : "san_sang");
+        xeMay.setTrangThai(trangThai != null && !trangThai.trim().isEmpty()
+                            ? trangThai.trim() : "san_sang");
 
         try {
             xeMayDAO.themXeMay(xeMay);

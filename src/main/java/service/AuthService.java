@@ -17,27 +17,20 @@ public class AuthService {
     private TaiKhoanDAO tkdao = new TaiKhoanDAO();
     private NguoiDungDao nddao = new NguoiDungDao();
 
-    // Đăng ký tài khoản người dùng (dùng nội bộ)
     public int dangKyTaiKhoanNguoiDung(TaiKhoan tk, NguoiDung nd, Connection con) throws SQLException {
         String check = kiemTraDangKyHopLe(tk, nd, con);
-        if (!check.equals("OK")) {
-            throw new RuntimeException(check);
-        }
-        tk.setPassword(PasswordService.bamPassword(tk.getPassword()));
+        if (!check.equals("OK")) throw new RuntimeException(check);
 
+        tk.setPassword(PasswordService.bamPassword(tk.getPassword()));
         int userid = tkdao.dangKy(tk, con);
-        if (userid == -1) {
-            throw new RuntimeException("Lỗi tạo tài khoản");
-        }
+        if (userid == -1) throw new RuntimeException("Lỗi tạo tài khoản");
 
         nd.setUserID(userid);
-        if (!nddao.themNguoiDung(nd, con)) {
-            throw new RuntimeException("Lỗi tạo thông tin người dùng");
-        }
+        if (!nddao.themNguoiDung(nd, con)) throw new RuntimeException("Lỗi tạo thông tin người dùng");
         return userid;
     }
 
-    // Đăng ký tài khoản khách hàng
+    // FIX: ném RuntimeException với message cụ thể thay vì trả về false âm thầm
     public boolean dangKyTaiKhoanKhachHang(TaiKhoan tk, NguoiDung nd, KhachHang kh) {
         KhachHangDAO khdao = new KhachHangDAO();
         Connection con = null;
@@ -49,17 +42,19 @@ public class AuthService {
             kh.setUserID(userID);
             if (!khdao.themKhachHang(userID, con)) {
                 con.rollback();
-                return false;
+                throw new RuntimeException("Lỗi tạo khách hàng");
             }
             con.commit();
             return true;
+        } catch (RuntimeException e) {
+            try { if (con != null) con.rollback(); } catch (Exception ignored) {}
+            throw e; // ném lại để servlet bắt được message
         } catch (Exception e) {
             try { if (con != null) con.rollback(); } catch (Exception ignored) {}
-            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         } finally {
             try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (Exception ignored) {}
         }
-        return false;
     }
 
     public boolean dangKyTaiKhoanDoiTac(TaiKhoan tk, NguoiDung nd, DoiTac dt) {
@@ -73,20 +68,21 @@ public class AuthService {
             dt.setUserID(userID);
             if (!dtdao.themDoiTac(userID, con)) {
                 con.rollback();
-                return false;
+                throw new RuntimeException("Lỗi tạo đối tác");
             }
             con.commit();
             return true;
+        } catch (RuntimeException e) {
+            try { if (con != null) con.rollback(); } catch (Exception ignored) {}
+            throw e;
         } catch (Exception e) {
             try { if (con != null) con.rollback(); } catch (Exception ignored) {}
-            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
         } finally {
             try { if (con != null) { con.setAutoCommit(true); con.close(); } } catch (Exception ignored) {}
         }
-        return false;
     }
 
-    // Quên mật khẩu
     public boolean quenMatKhauTaiKhoan(String email, String newPassword) {
         Connection con = null;
         try {
@@ -101,14 +97,11 @@ public class AuthService {
         return false;
     }
 
-    // Đăng nhập
     public TaiKhoan dangNhapTaiKhoan(TaiKhoan tk) {
         Connection con = null;
         try {
             con = Connect.getInstance().getConnect();
-            if (tkdao.dangNhap(tk, con)) {
-                return tk;
-            }
+            if (tkdao.dangNhap(tk, con)) return tk;
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
@@ -117,7 +110,6 @@ public class AuthService {
         return null;
     }
 
-    // Kiểm tra hợp lệ khi đăng ký
     public String kiemTraDangKyHopLe(TaiKhoan tk, NguoiDung nd, Connection con) throws SQLException {
         if (tk.getUsername() == null || tk.getUsername().trim().isEmpty())
             return "Username không được để trống";
@@ -133,10 +125,9 @@ public class AuthService {
             return "Username phải từ 4-20 ký tự, không chứa ký tự đặc biệt";
         if (!tk.getPassword().matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@#$%^&+=!]).{8,}$"))
             return "Mật khẩu phải >=8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt";
-        if (nd.getEmail() != null && !nd.getEmail().isEmpty()) {
+        if (nd.getEmail() != null && !nd.getEmail().isEmpty())
             if (!nd.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$"))
                 return "Email không hợp lệ";
-        }
         if (!nd.getSoDienThoai().matches("^0[0-9]{9}$"))
             return "Số điện thoại không hợp lệ";
         if (!nd.getSoCCCD().matches("^[0-9]{12}$"))
@@ -147,14 +138,12 @@ public class AuthService {
             return "Số điện thoại đã được sử dụng";
         if (nddao.kiemTraSoCCCDTonTai(nd.getSoCCCD(), con))
             return "CCCD đã tồn tại";
-        if (nd.getEmail() != null && !nd.getEmail().isEmpty()) {
+        if (nd.getEmail() != null && !nd.getEmail().isEmpty())
             if (nddao.kiemTraEmailTonTai(nd.getEmail(), con))
                 return "Email đã được sử dụng";
-        }
         return "OK";
     }
 
-    // Kiểm tra hợp lệ khi đăng nhập
     public String kiemTraDangNhapHopLe(TaiKhoan tk) {
         if (tk.getUsername() == null || tk.getUsername().trim().isEmpty())
             return "Username không được để trống";

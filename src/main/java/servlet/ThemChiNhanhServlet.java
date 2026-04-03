@@ -11,7 +11,7 @@ import dao.ChiNhanhDAO;
 import model.ChiNhanh;
 import service.KiemTraDoiTac;
 
-@WebServlet("/api/doitac/chinhanh")
+@WebServlet("/doitac/chinhanh")
 public class ThemChiNhanhServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;

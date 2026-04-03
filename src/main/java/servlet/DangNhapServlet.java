@@ -12,7 +12,7 @@ import model.TaiKhoan;
 import service.AuthService;
 import util.Role;
 
-@WebServlet("/api/xacthuc/dangnhap")
+@WebServlet("/dangnhap")
 public class DangNhapServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
@@ -22,15 +22,17 @@ public class DangNhapServlet extends HttpServlet {
     public void init() throws ServletException {
         authService = new AuthService();
     }
+
+    // FIX: thêm .forward() để JSP load được
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-    	req.getRequestDispatcher("dangnhap.jsp");
-    	
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        req.getRequestDispatcher("/dangnhap.jsp").forward(req, resp);
     }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
         response.setContentType("application/xml;charset=UTF-8");
         request.setCharacterEncoding("UTF-8");
 
@@ -41,39 +43,38 @@ public class DangNhapServlet extends HttpServlet {
         tk.setUsername(username);
         tk.setPassword(password);
 
-        String kiemTraHopLe = authService.kiemTraDangNhapHopLe(tk);
-        if (!kiemTraHopLe.equals("OK")) {
-            guiPhanHoiXML(response, 400, "error", kiemTraHopLe);
+        String kiemTra = authService.kiemTraDangNhapHopLe(tk);
+        if (!kiemTra.equals("OK")) {
+            guiXML(response, 400, "error", kiemTra, null);
             return;
         }
 
-        TaiKhoan tkDangNhapThanhCong = authService.dangNhapTaiKhoan(tk);
-
-        if (tkDangNhapThanhCong != null) {
+        TaiKhoan tkThanhCong = authService.dangNhapTaiKhoan(tk);
+        if (tkThanhCong != null) {
             HttpSession session = request.getSession(true);
-
-            session.setAttribute("role", tkDangNhapThanhCong.getRole().layGiaTri());
-            session.setAttribute("userID", tkDangNhapThanhCong.getUserID());
-            session.setAttribute("username", tkDangNhapThanhCong.getUsername());
-
-            if (Role.DOI_TAC.equals(tkDangNhapThanhCong.getRole())) {
-                session.setAttribute("maDoiTac", tkDangNhapThanhCong.getUserID());
+            session.setAttribute("role", tkThanhCong.getRole().layGiaTri());
+            session.setAttribute("userID", tkThanhCong.getUserID());
+            session.setAttribute("username", tkThanhCong.getUsername());
+            if (Role.DOI_TAC.equals(tkThanhCong.getRole())) {
+                session.setAttribute("maDoiTac", tkThanhCong.getUserID());
             }
 
-            guiPhanHoiXML(response, 200, "success", "Đăng nhập thành công!");
+            guiXML(response, 200, "success", "Đăng nhập thành công!", tkThanhCong.getRole().layGiaTri());
         } else {
-            guiPhanHoiXML(response, 401, "error", "Sai tài khoản hoặc mật khẩu!");
+            guiXML(response, 401, "error", "Sai tài khoản hoặc mật khẩu!", null);
         }
     }
 
-    private void guiPhanHoiXML(HttpServletResponse response, int statusCode,
-                                String status, String message) throws IOException {
-        response.setStatus(statusCode);
-        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<response>\n" +
-                "    <status>" + status + "</status>\n" +
-                "    <message>" + message + "</message>\n" +
-                "</response>";
-        response.getWriter().write(xml);
+    private void guiXML(HttpServletResponse resp, int status, String type,
+                        String message, String role) throws IOException {
+        resp.setStatus(status);
+        StringBuilder xml = new StringBuilder(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n" +
+            "    <status>" + type + "</status>\n" +
+            "    <message>" + message + "</message>\n"
+        );
+        if (role != null) xml.append("    <role>").append(role).append("</role>\n");
+        xml.append("</response>");
+        resp.getWriter().write(xml.toString());
     }
 }

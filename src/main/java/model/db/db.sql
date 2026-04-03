@@ -4,9 +4,9 @@ COLLATE utf8mb4_unicode_ci;
 
 USE thuexemay;
 
--- 1. TaiKhoan
+-- 1. TaiKhoan  [FIX: thêm AUTO_INCREMENT]
 CREATE TABLE TaiKhoan (
-    userID INT PRIMARY KEY,
+    userID INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) UNIQUE,
     password VARCHAR(255),
     role VARCHAR(50)
@@ -20,29 +20,25 @@ CREATE TABLE NguoiDung (
     email VARCHAR(100),
     trangThaieKYC BOOLEAN DEFAULT FALSE,
     soCCCD VARCHAR(20) UNIQUE,
-    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID) ON DELETE CASCADE
 );
 
 -- 3. KhachHang
 CREATE TABLE KhachHang (
     userID INT PRIMARY KEY UNIQUE,
-    FOREIGN KEY (userID) REFERENCES NguoiDung(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (userID) REFERENCES NguoiDung(userID) ON DELETE CASCADE
 );
 
 -- 4. DoiTac
 CREATE TABLE DoiTac (
     userID INT PRIMARY KEY UNIQUE,
-    FOREIGN KEY (userID) REFERENCES NguoiDung(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (userID) REFERENCES NguoiDung(userID) ON DELETE CASCADE
 );
 
 -- 5. NhanVien
 CREATE TABLE NhanVien (
     userID INT PRIMARY KEY UNIQUE,
-    FOREIGN KEY (userID) REFERENCES NguoiDung(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (userID) REFERENCES NguoiDung(userID) ON DELETE CASCADE
 );
 
 -- 6. ChiNhanh
@@ -51,8 +47,7 @@ CREATE TABLE ChiNhanh (
     maDoiTac INT,
     tenChiNhanh VARCHAR(100),
     diaDiem VARCHAR(255),
-    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(userID) ON DELETE CASCADE
 );
 
 -- 7. MauXe
@@ -106,8 +101,7 @@ CREATE TABLE GioHang (
     maGioHang INT PRIMARY KEY AUTO_INCREMENT,
     maKH INT,
     diaChiNhanXe VARCHAR(255),
-    FOREIGN KEY (maKH) REFERENCES KhachHang(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (maKH) REFERENCES KhachHang(userID) ON DELETE CASCADE
 );
 
 -- 11. MucHang
@@ -118,8 +112,7 @@ CREATE TABLE MucHang (
     thoiGianBatDau DATETIME,
     thoiGianKetThuc DATETIME,
     PRIMARY KEY (maGioHang, maGoiThue),
-    FOREIGN KEY (maGioHang) REFERENCES GioHang(maGioHang)
-        ON DELETE CASCADE,
+    FOREIGN KEY (maGioHang) REFERENCES GioHang(maGioHang) ON DELETE CASCADE,
     FOREIGN KEY (maGoiThue) REFERENCES GoiThue(maGoiThue)
 );
 
@@ -142,8 +135,7 @@ CREATE TABLE ChiTietDonThue (
     thoiGianKetThuc DATETIME,
     thoiGianTra DATETIME,
     donGia INT,
-    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue)
-        ON DELETE CASCADE,
+    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue) ON DELETE CASCADE,
     FOREIGN KEY (maXe) REFERENCES XeMay(maXe),
     FOREIGN KEY (maGoiThue) REFERENCES GoiThue(maGoiThue)
 );
@@ -156,8 +148,7 @@ CREATE TABLE ThanhToan (
     phuongThuc VARCHAR(50),
     trangThai VARCHAR(50),
     createdAt DATETIME,
-    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue)
-        ON DELETE CASCADE
+    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue) ON DELETE CASCADE
 );
 
 -- 15. HoanTien
@@ -167,8 +158,7 @@ CREATE TABLE HoanTien (
     soTien INT,
     lyDo TEXT,
     trangThai VARCHAR(50),
-    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue)
-        ON DELETE CASCADE
+    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue) ON DELETE CASCADE
 );
 
 -- 16. DanhGiaTraiNghiemThue
@@ -188,16 +178,14 @@ CREATE TABLE DanhGiaTraiNghiemThue (
 CREATE TABLE DanhSachMongMuon (
     maDS INT PRIMARY KEY AUTO_INCREMENT,
     maKH INT,
-    FOREIGN KEY (maKH) REFERENCES KhachHang(userID)
-        ON DELETE CASCADE
+    FOREIGN KEY (maKH) REFERENCES KhachHang(userID) ON DELETE CASCADE
 );
 
--- 18. WishListItems
+-- 18. MucDanhSachMongMuon
 CREATE TABLE MucDanhSachMongMuon (
     maWishList INT,
     maGoiThue INT,
     PRIMARY KEY (maWishList, maGoiThue),
-    FOREIGN KEY (maWishList) REFERENCES DanhSachMongMuon(maDS)
-        ON DELETE CASCADE,
+    FOREIGN KEY (maWishList) REFERENCES DanhSachMongMuon(maDS) ON DELETE CASCADE,
     FOREIGN KEY (maGoiThue) REFERENCES GoiThue(maGoiThue)
 );
