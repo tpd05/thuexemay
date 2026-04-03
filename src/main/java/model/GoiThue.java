@@ -101,11 +101,11 @@ public class GoiThue {
 	}
 
 
-	public float getgiamGia() {
+	public float getGiamGia() {
 		return giamGia;
 	}
 
-	public void setgiamGia(float giamGia) {
+	public void setGiamGia(float giamGia) {
 		this.giamGia = giamGia;
 	}
 }
