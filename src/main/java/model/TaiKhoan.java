@@ -3,21 +3,21 @@ package model;
 import java.sql.Connection;
 
 public class TaiKhoan {
-    private int userID;
-    private String username;
-    private String password;
-    private String role;
+	private int userID;
+	private String username;
+	private String password;
+	private Role role;
 
     public TaiKhoan() {}
 
-    public TaiKhoan(int userID, String username, String password, String role) {
-        this.userID = userID;
-        this.username = username;
-        this.password = password;
-        this.role = role;
-    }
+	public TaiKhoan(int userID, String username, String password, Role role) {
+		this.userID = userID;
+		this.username = username;
+		this.password = password;
+		this.role = role;
+	}
 
-	public TaiKhoan(String username, String password, String role) {
+	public TaiKhoan(String username, String password, Role role) {
 		super();
 		this.username = username;
 		this.password = password;
@@ -55,11 +55,11 @@ public class TaiKhoan {
 		this.password = password;
 	}
 
-	public String getRole() {
+	public Role getRole() {
 		return role;
 	}
 
-	public void setRole(String role) {
+	public void setRole(Role role) {
 		this.role = role;
 	}
 
