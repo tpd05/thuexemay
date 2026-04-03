@@ -10,8 +10,17 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 
+import service.PasswordService;
+
 public class Connect {
-	
+	public static void main(String[] args) {
+		String matKhau = "Duy2005@";        // ← Bạn có thể đổi thành password bạn thích
+        String hashed = PasswordService.bamPassword(matKhau);
+        
+        System.out.println("Mật khẩu bạn sẽ dùng: " + matKhau);
+        System.out.println("Hash cần insert vào SQL:");
+        System.out.println(hashed);
+	}
 	private static Connect instance;
 	private String url;
 	private String user;

@@ -51,7 +51,7 @@ CREATE TABLE ChiNhanh (
     maDoiTac INT,
     tenChiNhanh VARCHAR(100),
     diaDiem VARCHAR(255),
-    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac)
+    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(userID)
         ON DELETE CASCADE
 );
 
@@ -65,7 +65,7 @@ CREATE TABLE MauXe (
     doiXe INT,
     dungTich FLOAT,
     urlHinhAnh TEXT,
-    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac),
+    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(userID),
     FOREIGN KEY (maChiNhanh) REFERENCES ChiNhanh(maChiNhanh)
 );
 
@@ -79,7 +79,7 @@ CREATE TABLE XeMay (
     bienSo VARCHAR(20) UNIQUE,
     soKhung VARCHAR(50) UNIQUE,
     soMay VARCHAR(50) UNIQUE,
-    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac),
+    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(userID),
     FOREIGN KEY (maMauXe) REFERENCES MauXe(maMauXe),
     FOREIGN KEY (maChiNhanh) REFERENCES ChiNhanh(maChiNhanh)
 );
@@ -97,7 +97,7 @@ CREATE TABLE GoiThue (
     phuThu FLOAT,
     giamGia FLOAT,
     FOREIGN KEY (maMauXe) REFERENCES MauXe(maMauXe),
-    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac),
+    FOREIGN KEY (maDoiTac) REFERENCES DoiTac(userID),
     FOREIGN KEY (maChiNhanh) REFERENCES ChiNhanh(maChiNhanh)
 );
 
@@ -106,7 +106,7 @@ CREATE TABLE GioHang (
     maGioHang INT PRIMARY KEY AUTO_INCREMENT,
     maKH INT,
     diaChiNhanXe VARCHAR(255),
-    FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (maKH) REFERENCES KhachHang(userID)
         ON DELETE CASCADE
 );
 
@@ -129,7 +129,7 @@ CREATE TABLE DonThue (
     khID INT,
     diaChiNhanXe VARCHAR(255),
     trangThai VARCHAR(50),
-    FOREIGN KEY (khID) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (khID) REFERENCES KhachHang(userID)
 );
 
 -- 13. ChiTietDonThue
@@ -181,14 +181,14 @@ CREATE TABLE DanhGiaTraiNghiemThue (
     noiDung TEXT,
     trangThaiDuyet VARCHAR(50),
     FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue),
-    FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (maKH) REFERENCES KhachHang(userID)
 );
 
 -- 17. DanhSachMongMuon
 CREATE TABLE DanhSachMongMuon (
     maDS INT PRIMARY KEY AUTO_INCREMENT,
     maKH INT,
-    FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (maKH) REFERENCES KhachHang(userID)
         ON DELETE CASCADE
 );
 

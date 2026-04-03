@@ -1,5 +1,7 @@
 package model;
 
+import util.Role;
+
 public class TaiKhoan {
 	private int userID;
 	private String username;

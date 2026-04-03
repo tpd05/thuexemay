@@ -18,7 +18,6 @@ public class DoiTacFillter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
-        //có phải đối tác gọi API không
         if (!KiemTraDoiTac.checkDoiTac(req, resp)) {
             return;
         }

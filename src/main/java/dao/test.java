@@ -3,7 +3,7 @@ package dao;
 import model.DoiTac;
 import model.KhachHang;
 import model.NguoiDung;
-import model.Role;
+
 import model.TaiKhoan;
 import service.AuthService;
 import util.Connect;
@@ -54,7 +54,7 @@ public class test {
             if (login) {
                 System.out.println("Đăng nhập thành công");
                 System.out.println("UserID: " + loginTK.getUserID());
-                System.out.println("Role: " + loginTK.getRole().roleName());
+                //System.out.println("Role: " + loginTK.getRole().roleName());
             } else {
                 System.out.println("Đăng nhập thất bại");
             }
