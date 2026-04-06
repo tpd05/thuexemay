@@ -5,22 +5,28 @@ import java.time.LocalDateTime;
 public class ThanhToan {
     private int maThanhToan;
     private int maDonThue;
-    private float soTien;
-    private String phuongThuc;
-    private String trangThai;
+    private long soTien;
+    private String phuongThuc;      // EWALLET, CARD
+    private String trangThai;        // PENDING, SUCCESS, FAILED, EXPIRED
+    private String requestId;        // Momo request ID
+    private String transactionId;    // Momo transaction ID
     private LocalDateTime createdAt;
+    private LocalDateTime expiredAt;
+    private String momoResponse;
 
     public ThanhToan() {}
 
-	public ThanhToan(int maThanhToan, int maDonThue, float soTien, String phuongThuc, String trangThai,
-			LocalDateTime createdAt) {
-		super();
+	public ThanhToan(int maThanhToan, int maDonThue, long soTien, String phuongThuc, String trangThai,
+			String requestId, String transactionId, LocalDateTime createdAt, LocalDateTime expiredAt) {
 		this.maThanhToan = maThanhToan;
 		this.maDonThue = maDonThue;
 		this.soTien = soTien;
 		this.phuongThuc = phuongThuc;
 		this.trangThai = trangThai;
+		this.requestId = requestId;
+		this.transactionId = transactionId;
 		this.createdAt = createdAt;
+		this.expiredAt = expiredAt;
 	}
 
 	public int getMaThanhToan() {
@@ -39,11 +45,11 @@ public class ThanhToan {
 		this.maDonThue = maDonThue;
 	}
 
-	public float getSoTien() {
+	public long getSoTien() {
 		return soTien;
 	}
 
-	public void setSoTien(float soTien) {
+	public void setSoTien(long soTien) {
 		this.soTien = soTien;
 	}
 
@@ -63,12 +69,44 @@ public class ThanhToan {
 		this.trangThai = trangThai;
 	}
 
+	public String getRequestId() {
+		return requestId;
+	}
+
+	public void setRequestId(String requestId) {
+		this.requestId = requestId;
+	}
+
+	public String getTransactionId() {
+		return transactionId;
+	}
+
+	public void setTransactionId(String transactionId) {
+		this.transactionId = transactionId;
+	}
+
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
 
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getExpiredAt() {
+		return expiredAt;
+	}
+
+	public void setExpiredAt(LocalDateTime expiredAt) {
+		this.expiredAt = expiredAt;
+	}
+
+	public String getMomoResponse() {
+		return momoResponse;
+	}
+
+	public void setMomoResponse(String momoResponse) {
+		this.momoResponse = momoResponse;
 	}
     
 }

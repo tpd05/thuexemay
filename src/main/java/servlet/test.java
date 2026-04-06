@@ -1,4 +1,4 @@
-package servelet;
+package servlet;
 
 public class test {
 

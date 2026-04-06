@@ -2,14 +2,14 @@ package model;
 
 public class GioHang {
     private int maGioHang;
-    private int maKH;
+    private int userID;
     private String diaChiNhanXe;
 
     public GioHang() {}
 
-    public GioHang(int maGioHang, int maKH, String diaChiNhanXe) {
+    public GioHang(int maGioHang, int userID, String diaChiNhanXe) {
         this.maGioHang = maGioHang;
-        this.maKH = maKH;
+        this.userID = userID;
         this.diaChiNhanXe = diaChiNhanXe;
     }
 
@@ -21,12 +21,14 @@ public class GioHang {
 		this.maGioHang = maGioHang;
 	}
 
-	public int getMaKH() {
-		return maKH;
+
+
+	public int getUserID() {
+		return userID;
 	}
 
-	public void setMaKH(int maKH) {
-		this.maKH = maKH;
+	public void setUserID(int userID) {
+		this.userID = userID;
 	}
 
 	public String getDiaChiNhanXe() {

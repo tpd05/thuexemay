@@ -1,12 +1,18 @@
 package service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+
+import dao.ChiNhanhDAO;
 import dao.DoiTacDAO;
+import dao.GioHangDAO;
 import dao.KhachHangDAO;
 import dao.NguoiDungDao;
 import dao.TaiKhoanDAO;
-import java.sql.Connection;
-import java.sql.SQLException;
+import model.ChiNhanh;
 import model.DoiTac;
+import model.GioHang;
 import model.KhachHang;
 import model.NguoiDung;
 import model.Role;
@@ -18,31 +24,32 @@ public class AuthService {
 	private NguoiDungDao nddao = new NguoiDungDao();
 
 	// Đăng ký tài khoản người dùng
-	public int dangKyTaiKhoanNguoiDung(TaiKhoan tk, NguoiDung nd, Connection con)throws SQLException {
-			
-			String check = kiemTraDangKyHopLe(tk, nd, con);
-			if(!check.equals("OK")) {
+	public int dangKyTaiKhoanNguoiDung(TaiKhoan tk, NguoiDung nd, Connection con) throws SQLException {
+
+		String check = kiemTraDangKyHopLe(tk, nd, con);
+		if (!check.equals("OK")) {
 			throw new RuntimeException(check);
-			}
-			// Băm mật khẩu
-			tk.setPassword(PasswordService.bamPassword(tk.getPassword()));
+		}
+		// Băm mật khẩu
+		tk.setPassword(PasswordService.bamPassword(tk.getPassword()));
 
-			int userid = tkdao.dangKy(tk, con);
-			if (userid == -1) {
-				throw new RuntimeException("Lỗi tạo tài khoản");
-			}
+		int userid = tkdao.dangKy(tk, con);
+		if (userid == -1) {
+			throw new RuntimeException("Lỗi tạo tài khoản");
+		}
 
-			nd.setUserID(userid);
+		nd.setUserID(userid);
 
-			if (!nddao.themNguoiDung(nd, con)) {
-				throw new RuntimeException("Lỗi tạo thông tin người dùng");
-			}
-			return userid;
+		if (!nddao.themNguoiDung(nd, con)) {
+			throw new RuntimeException("Lỗi tạo thông tin người dùng");
+		}
+		return userid;
 	}
-	
-	//Đăng ký tài khoản khách hàng
-	public boolean dangKyTaiKhoanKhachHang(TaiKhoan tk, NguoiDung nd, KhachHang kh) {
+
+	// Đăng ký tài khoản khách hàng
+	public boolean dangKyTaiKhoanKhachHang(TaiKhoan tk, NguoiDung nd, KhachHang kh) throws SQLException {
 		KhachHangDAO khdao = new KhachHangDAO();
+		GioHangDAO ghdao = new GioHangDAO();
 		Connection con = null;
 		try {
 			con = Connect.getInstance().getConnect();
@@ -50,77 +57,94 @@ public class AuthService {
 			tk.setRole(Role.KHACH_HANG);
 			int userID = dangKyTaiKhoanNguoiDung(tk, nd, con);
 			kh.setUserID(userID);
-			if(!khdao.themKhachHang(tk.getUserID(), con)) {
-				con.rollback();
-				return false;
+			
+			if (!khdao.themKhachHang(userID, con)) {
+			    throw new RuntimeException("Lỗi tạo khách hàng");
 			}
+			
+			GioHang gh = new GioHang();
+			gh.setUserID(userID);
+			gh.setDiaChiNhanXe("");
+			
+
+
+			if (!ghdao.taoGioHang(gh, con)) {
+			    throw new RuntimeException("Lỗi tạo giỏ hàng");
+			}
+			
 			con.commit();
 			return true;
-		} catch (SQLException e) {
-			try {
-				if (con != null)
-					con.rollback();
-			} catch (Exception e1) {
-				e1.printStackTrace();
-				// TODO: handle exception
-			}
-			e.printStackTrace();
-		} finally {
+		}catch (Exception e) {
+		    if (con != null) {
+		        try { con.rollback(); } catch (Exception ex) {
+		            throw new RuntimeException("Lỗi rollback", ex);
+		        }
+		    }
+		    throw getRootException(e);
+		}finally {
 			try {
 				if (con != null) {
 					con.setAutoCommit(true);
 					con.close();
 				}
-
 			} catch (Exception e) {
-				e.printStackTrace();
-				// TODO: handle exception
+				throw new SQLException("Lỗi đóng kết nối", e);
 			}
 		}
-		return false;
 	}
 
-	// Đăng ký tài khoản đối tác
-	public boolean dangKyTaiDoiTac(TaiKhoan tk, NguoiDung nd, DoiTac dt) {
+	//Đăng ký tài khoản đối tác
+	public boolean dangKyTaiKhoanDoiTac(TaiKhoan tk, NguoiDung nd, DoiTac dt, List<ChiNhanh> danhSachChiNhanh)
+			throws SQLException {
+
 		DoiTacDAO dtdao = new DoiTacDAO();
+		ChiNhanhDAO cndao = new ChiNhanhDAO();
+
 		Connection con = null;
+
 		try {
 			con = Connect.getInstance().getConnect();
 			con.setAutoCommit(false);
+
 			tk.setRole(Role.DOI_TAC);
+
 			int userID = dangKyTaiKhoanNguoiDung(tk, nd, con);
+
+			// Tạo DoiTac và lấy maDoiTac được tạo
+			int maDoiTac = dtdao.themDoiTac(userID, con);
+			dt.setMaDoiTac(maDoiTac);
 			dt.setUserID(userID);
-			if(!dtdao.themDoiTac(tk.getUserID(), con)) {
-				con.rollback();
-				return false;
+
+			// Thêm chi nhánh với maDoiTac (không dùng userID)
+			for (ChiNhanh cn : danhSachChiNhanh) {
+				cn.setMaDoiTac(maDoiTac);
+				cndao.themChiNhanh(cn, con);
 			}
+
 			con.commit();
 			return true;
-		} catch (SQLException e) {
-			try {
-				if (con != null)
-					con.rollback();
-			} catch (Exception e1) {
-				e1.printStackTrace();
-				// TODO: handle exception
-			}
-			e.printStackTrace();
-		} finally {
-			try {
-				if (con != null) {
+
+		}catch (Exception e) {
+		    if (con != null) {
+		        try { con.rollback(); } catch (Exception ex) {
+		            throw new RuntimeException("Lỗi rollback", ex);
+		        }
+		    }
+		    throw getRootException(e);
+		}finally {
+			if (con != null) {
+				try {
 					con.setAutoCommit(true);
 					con.close();
+				} catch (Exception e) {
+					throw new SQLException("Lỗi đóng kết nối", e);
 				}
-
-			} catch (Exception e) {
-				e.printStackTrace();
-				// TODO: handle exception
 			}
 		}
-		return false;
 	}
+
 	// Quên mật khẩu
-	public boolean quenMatKhauTaiKhoan(String email, String newPassword) {
+	public boolean quenMatKhauTaiKhoan(String email, String newPassword) throws SQLException {
 		Connection con = null;
 
 		try {
@@ -132,16 +156,37 @@ public class AuthService {
 			return tkdao.quenMatKhau(email, hashed, con);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			throw new SQLException("Lỗi quên mật khẩu", e);
 		} finally {
 			try {
 				if (con != null)
 					con.close();
 			} catch (Exception e) {
+				throw new SQLException("Lỗi đóng kết nối", e);
 			}
 		}
+	}
 
-		return false;
+	// Đăng nhập
+	public TaiKhoan dangNhap(TaiKhoan tk) throws Exception {
+		try (Connection con = Connect.getInstance().getConnect()) {
+
+			String check = kiemTraDangNhapHopLe(tk);
+			if (!check.equals("OK")) {
+				throw new RuntimeException(check);
+			}
+
+			boolean success = tkdao.dangNhap(tk, con);
+
+			if (!success) {
+				return null;
+			}
+
+			return tk;
+
+		} catch (SQLException e) {
+			throw new Exception("Lỗi đăng nhập", e);
+		}
 	}
 
 	// Kiểm tra giá trị hợp lệ khi đăng ký
@@ -216,16 +261,25 @@ public class AuthService {
 	}
 
 	// Kiểm tra giá trị hợp lệ khi đăng nhập
-	public String kiemTraDangNhapHopLe(TaiKhoan tk, Connection con) {
+	public String kiemTraDangNhapHopLe(TaiKhoan tk) throws SQLException {
 		// Username không được để trống
 		if (tk.getUsername() == null || tk.getUsername().trim().isEmpty()) {
 			return "Username không được để trống";
 		}
 
 		// Mật khẩu không được để trống
-		if (tk.getPassword() == null || tk.getPassword().isEmpty()) {
+		if (tk.getPassword() == null || tk.getPassword().trim().isEmpty()) {
 			return "Mật khẩu không được để trống";
 		}
 		return "OK";
+	}
+	
+	private RuntimeException getRootException(Exception e) {
+	    Throwable cause = e;
+	    while (cause.getCause() != null) cause = cause.getCause();
+	    return new RuntimeException(
+	        cause.getMessage() != null ? cause.getMessage() : "Lỗi hệ thống",
+	        e
+	    );
 	}
 }

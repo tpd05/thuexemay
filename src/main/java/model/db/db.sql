@@ -33,14 +33,16 @@ CREATE TABLE KhachHang (
 
 -- 4. DoiTac
 CREATE TABLE DoiTac (
-    userID INT PRIMARY KEY UNIQUE,
+    maDoiTac INT PRIMARY KEY AUTO_INCREMENT,
+    userID INT  UNIQUE,
     FOREIGN KEY (userID) REFERENCES NguoiDung(userID)
         ON DELETE CASCADE
 );
 
 -- 5. NhanVien
 CREATE TABLE NhanVien (
-    userID INT PRIMARY KEY UNIQUE,
+    maNhanVien INT PRIMARY KEY AUTO_INCREMENT,
+    userID INT UNIQUE,
     FOREIGN KEY (userID) REFERENCES NguoiDung(userID)
         ON DELETE CASCADE
 );
@@ -104,9 +106,9 @@ CREATE TABLE GoiThue (
 -- 10. GioHang
 CREATE TABLE GioHang (
     maGioHang INT PRIMARY KEY AUTO_INCREMENT,
-    maKH INT,
+   userID INT,
     diaChiNhanXe VARCHAR(255),
-    FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
         ON DELETE CASCADE
 );
 
@@ -126,10 +128,10 @@ CREATE TABLE MucHang (
 -- 12. DonThue
 CREATE TABLE DonThue (
     maDonThue INT PRIMARY KEY AUTO_INCREMENT,
-    khID INT,
+    userID INT,
     diaChiNhanXe VARCHAR(255),
     trangThai VARCHAR(50),
-    FOREIGN KEY (khID) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
 );
 
 -- 13. ChiTietDonThue
@@ -175,20 +177,20 @@ CREATE TABLE HoanTien (
 CREATE TABLE DanhGiaTraiNghiemThue (
     maDanhGia INT PRIMARY KEY AUTO_INCREMENT,
     maDonThue INT,
-    maKH INT,
+    userID INT,
     mucDo INT,
     tieuDe VARCHAR(255),
     noiDung TEXT,
     trangThaiDuyet VARCHAR(50),
     FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue),
-    FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
 );
 
 -- 17. DanhSachMongMuon
 CREATE TABLE DanhSachMongMuon (
     maDS INT PRIMARY KEY AUTO_INCREMENT,
-    maKH INT,
-    FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+    userID INT,
+    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
         ON DELETE CASCADE
 );
 
@@ -201,3 +203,19 @@ CREATE TABLE MucDanhSachMongMuon (
         ON DELETE CASCADE,
     FOREIGN KEY (maGoiThue) REFERENCES GoiThue(maGoiThue)
 );
+
+ALTER TABLE `thanhtoan` MODIFY COLUMN `soTien` BIGINT NOT NULL;
+
+-- 2. Thêm các field mới cho Momo integration
+ALTER TABLE `thanhtoan` 
+ADD COLUMN `requestId` VARCHAR(100) UNIQUE COMMENT 'Momo request ID' AFTER `soTien`,
+-- ADD COLUMN `transactionId` VARCHAR(100) COMMENT 'Momo transaction ID' AFTER `requestId`,
+ADD COLUMN `expiredAt` DATETIME COMMENT 'QR code expiration time (3 minutes)' AFTER `createdAt`,
+ADD COLUMN `momoResponse` LONGTEXT COMMENT 'Momo API response JSON' AFTER `expiredAt`;
+-- ADD COLUMN `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `momoResponse`;
+
+-- 3. Thêm các index để tối ưu truy vấn
+ALTER TABLE `thanhtoan` 
+ADD INDEX `idx_requestId` (`requestId`),
+ADD INDEX `idx_trangThai` (`trangThai`),
+ADD INDEX `idx_createdAt` (`createdAt`);

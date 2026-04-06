@@ -1,16 +1,37 @@
 package model;
 
+import java.sql.Timestamp;
+import java.util.List;
+
 public class DonThue {
 	private int maDonThue;
-    private int khID;
+    private int userID;
     private String diaChiNhanXe;
     private String trangThai;
+    private Timestamp ngayTao;
+    private List<ChiTietDonThue> dsChiTiet;
 
-    public DonThue() {}
+    public int getUserID() {
+		return userID;
+	}
 
-    public DonThue(int maDonThue, int khID, String diaChiNhanXe, String trangThai) {
+	public void setUserID(int userID) {
+		this.userID = userID;
+	}
+
+	public List<ChiTietDonThue> getDsChiTiet() {
+		return dsChiTiet;
+	}
+
+	public void setDsChiTiet(List<ChiTietDonThue> dsChiTiet) {
+		this.dsChiTiet = dsChiTiet;
+	}
+
+	public DonThue() {}
+
+    public DonThue(int maDonThue, int userID, String diaChiNhanXe, String trangThai) {
         this.maDonThue = maDonThue;
-        this.khID = khID;
+        this.userID = userID;
         this.diaChiNhanXe = diaChiNhanXe;
         this.trangThai = trangThai;
     }
@@ -21,14 +42,6 @@ public class DonThue {
 
 	public void setMaDonThue(int maDonThue) {
 		this.maDonThue = maDonThue;
-	}
-
-	public int getKhID() {
-		return khID;
-	}
-
-	public void setKhID(int khID) {
-		this.khID = khID;
 	}
 
 	public String getDiaChiNhanXe() {
@@ -45,6 +58,14 @@ public class DonThue {
 
 	public void setTrangThai(String trangThai) {
 		this.trangThai = trangThai;
+	}
+
+	public Timestamp getNgayTao() {
+		return ngayTao;
+	}
+
+	public void setNgayTao(Timestamp ngayTao) {
+		this.ngayTao = ngayTao;
 	}
     
 }

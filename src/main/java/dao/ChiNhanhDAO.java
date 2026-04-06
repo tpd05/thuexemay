@@ -21,8 +21,12 @@ public class ChiNhanhDAO {
 		}
 	}
 
-	public void themChiNhanh(ChiNhanh chiNhanh) throws SQLException {
-	    if (kiemTraTonTai(chiNhanh)) {
+	public ChiNhanhDAO(Connection con) {
+		this.con = con;
+	}
+
+	public void themChiNhanh(ChiNhanh chiNhanh, Connection con) throws SQLException {
+	    if (kiemTraTonTai(chiNhanh, con)) {
 	        throw new IllegalArgumentException("Chi nhánh đã tồn tại!!!");
 	    }
 
@@ -37,10 +41,9 @@ public class ChiNhanhDAO {
 	    }
 	}
 
-	public boolean kiemTraTonTai(ChiNhanh chiNhanh) {
+	public boolean kiemTraTonTai(ChiNhanh chiNhanh, Connection con) {
 	    String sql = "select 1 from ChiNhanh where maDoiTac = ? and tenChiNhanh = ?";
-	    try {
-	        PreparedStatement ps = con.prepareStatement(sql);
+	    try (PreparedStatement ps = con.prepareStatement(sql)) {
 	        ps.setInt(1, chiNhanh.getMaDoiTac());
 	        ps.setString(2, chiNhanh.getTenChiNhanh());
 
@@ -56,21 +59,25 @@ public class ChiNhanhDAO {
 	public List<ChiNhanh> layToanBoChiNhanh(int maDoiTac) {
 		List<ChiNhanh> list = new ArrayList<>();
 		String sql = "select * from ChiNhanh where maDoiTac = ?";
-		try {
-			PreparedStatement ps = con.prepareStatement(sql);
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			ps.setInt(1, maDoiTac);
-			ResultSet rs = ps.executeQuery();
-			while (rs.next()) {
-				ChiNhanh cn = new ChiNhanh();
-				cn.setMaChiNhanh(rs.getInt("maChiNhanh"));
-				cn.setMaDoiTac(rs.getInt("maDoiTac"));
-				cn.setTenChiNhanh(rs.getString("tenChiNhanh"));
-				cn.setDiaDiem(rs.getString("diaDiem"));
-				list.add(cn);
+			System.out.println("DEBUG DAO: Executing SQL: " + sql + " with maDoiTac=" + maDoiTac);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					ChiNhanh cn = new ChiNhanh();
+					cn.setMaChiNhanh(rs.getInt("maChiNhanh"));
+					cn.setMaDoiTac(rs.getInt("maDoiTac"));
+					cn.setTenChiNhanh(rs.getString("tenChiNhanh"));
+					cn.setDiaDiem(rs.getString("diaDiem"));
+					list.add(cn);
+					System.out.println("DEBUG DAO: Found ChiNhanh: " + cn.getTenChiNhanh());
+				}
 			}
 		} catch (SQLException e) {
+			System.out.println("DEBUG DAO: SQL Exception = " + e.getMessage());
 			e.printStackTrace();
 		}
+		System.out.println("DEBUG DAO: Total ChiNhanhs found = " + list.size());
 		return list;
 	}
 }
