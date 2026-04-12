@@ -191,19 +191,24 @@ public class GoiThueDAO {
 	    return map;
 	}
 	public int demTongXe(int maGoiThue, Connection con) throws SQLException{
-			String SQL = "select count(*) from xemay xm join goithue gt on xm.maMauXe = gt.maMauXe where gt.maGoiThue = ?";
-			try(PreparedStatement pstm = con.prepareStatement(SQL)){
-				pstm.setInt(1, maGoiThue);
-				try(ResultSet rs = pstm.executeQuery()){
-					if(rs.next()) {
-					return rs.getInt(1);
-					}
+		String SQL = "SELECT COUNT(DISTINCT xm.maXe) as tongXe " +
+		             "FROM XeMay xm " +
+		             "JOIN GoiThue gt ON xm.maMauXe = gt.maMauXe " +
+		             "WHERE gt.maGoiThue = ? " +
+		             "AND xm.maChiNhanh = gt.maChiNhanh";
+
+		try(PreparedStatement pstm = con.prepareStatement(SQL)){
+			pstm.setInt(1, maGoiThue);
+			try(ResultSet rs = pstm.executeQuery()){
+				if(rs.next()) {
+					return rs.getInt("tongXe");
 				}
-			} catch (SQLException e) {
-				e.printStackTrace();
 			}
-			return 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+		return 0;
+	}
 
 		// Lấy tất cả gói thuê (không filter theo DoiTac)
 		public List<GoiThue> layTatCaGoiThue(Connection con) throws SQLException {
