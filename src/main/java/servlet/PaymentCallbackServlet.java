@@ -1,234 +1,193 @@
 package servlet;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.util.logging.Logger;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
-import java.util.Base64;
-
-import dao.ThanhToanDAO;
-import util.Connect;
+import service.ThanhToanService;
+import model.DonThue;
+import model.GioHang;
+import cache.PaymentCache;
 
 /**
- * PaymentCallbackServlet
- * 
- * Nhận callback từ Momo sau khi user thanh toán
- * Endpoint: /khachhang/payment-callback (GET/POST)
- * 
- * FLOW:
- * 1. User scan QR + nhập OTP trên Momo app
- * 2. Momo process payment
- * 3. Momo POST callback đến endpoint này
- * 4. Verify signature (security check)
- * 5. Update THANHTOAN status = SUCCESS/FAILED
- * 6. Return response to Momo
+ * PaymentCallbackServlet - Callback from PaymentMockServlet
+ *
+ * - Nếu result=success → Create DonThue + ChiTietDonThue + ThanhToan atomically → Redirect to success page
+ * - Nếu result=cancel → Don't save anything, rollback → Redirect to payment page (retry)
+ *
+ * Endpoint: /khachhang/thanhtoan/callback?maThanhToan=X&result=success/cancel
  */
-@WebServlet("/khachhang/payment-callback")
+@WebServlet("/khachhang/thanhtoan/callback")
 public class PaymentCallbackServlet extends HttpServlet {
-    private static final Logger logger = Logger.getLogger(PaymentCallbackServlet.class.getName());
-    
-    // Demo credentials - REPLACE with real from Momo business account
-    private static final String PARTNER_CODE = System.getenv("MOMO_PARTNER_CODE") != null ? 
-        System.getenv("MOMO_PARTNER_CODE") : "MOMO5W0J7IJ0";
-    private static final String ACCESS_KEY = System.getenv("MOMO_ACCESS_KEY") != null ? 
-        System.getenv("MOMO_ACCESS_KEY") : "F8BF47D1D07F9454";
-    private static final String SECRET_KEY = System.getenv("MOMO_SECRET_KEY") != null ? 
-        System.getenv("MOMO_SECRET_KEY") : "cc5e81487edf4541f2b88e8f3bf40db0";
+	private static final long serialVersionUID = 1L;
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        handleCallback(request, response);
-    }
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        handleCallback(request, response);
-    }
+		System.out.println("\n========================================");
+		System.out.println("=== PaymentCallbackServlet.doGet() CALLED ===");
+		System.out.println("========================================");
+		System.out.flush();
 
-    /**
-     * Xử lý callback từ Momo
-     * 
-     * Expected parameters từ Momo:
-     * - partnerCode
-     * - accessKey
-     * - requestId        (do ta gửi, unique identifier)
-     * - orderId          (do ta gửi)
-     * - amount
-     * - orderInfo
-     * - orderType
-     * - transactionId    (từ Momo, dùng để track)
-     * - resultCode       (0 = success)
-     * - resultDescription
-     * - payType
-     * - signature        (HMAC-SHA256 verification)
-     * - extraData
-     * - responseTime
-     */
-    private void handleCallback(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        
-        response.setContentType("application/json;charset=UTF-8");
-        
-        try {
-            // 1️⃣ Lấy parameters từ request (Momo callback)
-            String partnerCode = request.getParameter("partnerCode");
-            String accessKey = request.getParameter("accessKey");
-            String requestId = request.getParameter("requestId");
-            String orderId = request.getParameter("orderId");
-            String amount = request.getParameter("amount");
-            String resultCode = request.getParameter("resultCode");
-            String signature = request.getParameter("signature");
-            String transactionId = request.getParameter("transactionId");
-            String extraData = request.getParameter("extraData");
-            
-            logger.info("[Callback] Received from Momo: requestId=" + requestId + 
-                       ", resultCode=" + resultCode + ", transactionId=" + transactionId);
-            
-            // 2️⃣ Validate required parameters
-            if (requestId == null || signature == null) {
-                logger.warning("[Callback] Missing required parameters");
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.getWriter().write("{\"error\":\"Missing parameters\"}");
-                return;
-            }
-            
-            // 3️⃣ Verify signature (SECURITY CHECK)
-            // Signature format: HMAC-SHA256(rawData, secretKey)
-            // Raw data: accessKey=X&amount=Y&extraData=Z&orderId=...&orderType=...&partnerCode=...&requestId=...&responseTime=...
-            
-            String rawSignature = buildRawSignature(
-                accessKey, 
-                amount, 
-                extraData != null ? extraData : "", 
-                orderId, 
-                partnerCode, 
-                requestId, 
-                request.getParameter("responseTime") != null ? request.getParameter("responseTime") : ""
-            );
-            
-            String expectedSignature = generateSignature(rawSignature, SECRET_KEY);
-            
-            if (!signature.equals(expectedSignature)) {
-                logger.warning("[Callback] Signature mismatch! Expected: " + expectedSignature + 
-                             ", Got: " + signature);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("{\"error\":\"Invalid signature\"}");
-                return;
-            }
-            
-            logger.info("[Callback] Signature verified ✓");
-            
-            // 4️⃣ Update THANHTOAN in database
-            ThanhToanDAO ttDAO = new ThanhToanDAO();
-            Connection con = null;
-            
-            try {
-                con = Connect.getInstance().getConnect();
-                
-                String status = "0".equals(resultCode) ? "SUCCESS" : "FAILED";
-                String momoResponse = buildMomoResponse(request);
-                
-                // Update: status, transactionId, momoResponse
-                ttDAO.capNhatTrangThai(
-                    requestId, 
-                    status, 
-                    transactionId != null ? transactionId : "", 
-                    momoResponse, 
-                    con
-                );
-                
-                logger.info("[Callback] Updated THANHTOAN: requestId=" + requestId + 
-                           ", status=" + status);
-                
-                // 5️⃣ Return success response to Momo
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().write("{\"status\":\"ok\"}");
-                
-            } catch (Exception e) {
-                logger.severe("[Callback] Database error: " + e.getMessage());
-                e.printStackTrace();
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                response.getWriter().write("{\"error\":\"Database error\"}");
-            } finally {
-                if (con != null) {
-                    try { con.close(); } catch (Exception e) {}
-                }
-            }
-            
-        } catch (Exception e) {
-            logger.severe("[Callback] Exception: " + e.getMessage());
-            e.printStackTrace();
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            try {
-                response.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
-            } catch (Exception ex) {}
-        }
-    }
+		String result = request.getParameter("result");
+		String maThanhToanStr = request.getParameter("maThanhToan");
+		HttpSession session = request.getSession(true);
 
-    /**
-     * Build raw signature string for verification
-     * Format: accessKey=X&amount=Y&extraData=Z&orderId=...&orderType=...&partnerCode=...&requestId=...&responseTime=...
-     * 
-     * ⚠️ IMPORTANT: Parameters MUST be in alphabetical order!
-     */
-    private String buildRawSignature(String accessKey, String amount, String extraData, 
-                                    String orderId, String partnerCode, String requestId,
-                                    String responseTime) {
-        // Alphabetical order: a-e-e-o-o-p-r-r
-        StringBuilder raw = new StringBuilder();
-        raw.append("accessKey=").append(accessKey);
-        raw.append("&amount=").append(amount);
-        raw.append("&extraData=").append(extraData);
-        raw.append("&orderId=").append(orderId);
-        raw.append("&partnerCode=").append(partnerCode);
-        raw.append("&requestId=").append(requestId);
-        raw.append("&responseTime=").append(responseTime);
-        
-        return raw.toString();
-    }
+		System.out.println("result=" + result + ", maThanhToan=" + maThanhToanStr);
+		System.out.flush();
 
-    /**
-     * Generate HMAC-SHA256 signature
-     * 
-     * @param data Raw signature string
-     * @param secretKey SECRET_KEY from Momo
-     * @return Base64 encoded signature
-     */
-    private String generateSignature(String data, String secretKey) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
-            mac.init(secretKeySpec);
-            
-            byte[] digest = mac.doFinal(data.getBytes());
-            return Base64.getEncoder().encodeToString(digest);
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating signature: " + e.getMessage(), e);
-        }
-    }
+		if (maThanhToanStr == null || maThanhToanStr.isEmpty()) {
+			System.out.println("ERROR: Missing maThanhToan");
+			System.out.flush();
+			response.sendRedirect(request.getContextPath() + "/khachhang/giohang");
+			return;
+		}
 
-    /**
-     * Build JSON response from Momo parameters (for logging/audit)
-     */
-    private String buildMomoResponse(HttpServletRequest request) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        sb.append("\"partnerCode\":\"").append(request.getParameter("partnerCode")).append("\",");
-        sb.append("\"requestId\":\"").append(request.getParameter("requestId")).append("\",");
-        sb.append("\"resultCode\":\"").append(request.getParameter("resultCode")).append("\",");
-        sb.append("\"resultDescription\":\"").append(request.getParameter("resultDescription")).append("\",");
-        sb.append("\"transactionId\":\"").append(request.getParameter("transactionId")).append("\",");
-        sb.append("\"amount\":").append(request.getParameter("amount")).append(",");
-        sb.append("\"responseTime\":\"").append(request.getParameter("responseTime")).append("\"");
-        sb.append("}");
-        return sb.toString();
-    }
+		try {
+			int maThanhToan = Integer.parseInt(maThanhToanStr);
+
+			if ("success".equals(result)) {
+				System.out.println("Processing success result...");
+				System.out.flush();
+				handlePaymentSuccess(request, response, session, maThanhToan);
+			} else if ("cancel".equals(result)) {
+				System.out.println("Processing cancel result...");
+				System.out.flush();
+				handlePaymentCancel(request, response, session, maThanhToan);
+			} else {
+				System.out.println("ERROR: Unknown result=" + result);
+				System.out.flush();
+				response.sendRedirect(request.getContextPath() + "/khachhang/giohang");
+			}
+		} catch (NumberFormatException e) {
+			System.out.println("ERROR: Invalid maThanhToan format: " + maThanhToanStr);
+			e.printStackTrace();
+			System.out.flush();
+			response.sendRedirect(request.getContextPath() + "/khachhang/giohang");
+		} catch (Exception e) {
+			System.out.println("ERROR in doGet: " + e.getMessage());
+			e.printStackTrace();
+			System.out.flush();
+			request.setAttribute("errorMessage", "Lỗi: " + e.getMessage());
+			request.getRequestDispatcher("/views/khachhang/thanhtoan.jsp").forward(request, response);
+		}
+	}
+
+	/**
+	 * Handle successful payment
+	 * - Verify maThanhToan exists in cache (cross-device validation)
+	 * - Create DonThue + ChiTietDonThue + ThanhToan atomically (all with status DA_THANH_TOAN)
+	 * - Mark payment as completed for Device A polling
+	 * - Redirect to success page
+	 */
+	private void handlePaymentSuccess(HttpServletRequest request, HttpServletResponse response,
+			HttpSession session, int maThanhToan) throws Exception {
+
+		System.out.println(">>> handlePaymentSuccess() called with maThanhToan=" + maThanhToan);
+
+		try {
+			// Validate maThanhToan exists in cache (supports cross-device)
+			if (!cache.PaymentCache.exists(maThanhToan)) {
+				System.out.println("ERROR: maThanhToan not in cache");
+				throw new Exception("Mã thanh toán không tồn tại hoặc đã hết hạn");
+			}
+
+			// Get payment info from cache (not session - supports cross-device)
+			double soTien = cache.PaymentCache.getSoTien(maThanhToan);
+			String phuongThuc = cache.PaymentCache.getPhuongThuc(maThanhToan);
+			DonThue donThueAo = cache.PaymentCache.getDonThueAo(maThanhToan);
+
+			System.out.println("Cache data - soTien=" + soTien + ", phuongThuc=" + phuongThuc + ", donThueAo=" + (donThueAo != null ? "OK" : "NULL"));
+
+			if (soTien <= 0 || phuongThuc == null || donThueAo == null) {
+				System.out.println("ERROR: Invalid payment data from cache");
+				throw new Exception("Thông tin thanh toán không hợp lệ");
+			}
+
+			// Get userID and GioHang info from session
+			Integer userID = (Integer) session.getAttribute("userID");
+			Integer maGioHang = (Integer) session.getAttribute("maGioHang");
+
+			System.out.println("Session data - userID=" + userID + ", maGioHang=" + maGioHang);
+
+			// Create GioHang object if we have the info
+			GioHang gh = null;
+			if (userID != null && maGioHang != null) {
+				gh = new GioHang();
+				gh.setUserID(userID);
+				gh.setMaGioHang(maGioHang);
+				System.out.println("GioHang object created for cart cleanup");
+			} else {
+				System.out.println("WARNING: userID or maGioHang not in session - cart items won't be deleted");
+			}
+
+			// Call service to create ALL 4 records atomically (Order + Payment + Cart cleanup)
+			// New signature: (DonThue don, double soTien, String phuongThuc, GioHang gh)
+			System.out.println("Calling ThanhToanService.luuDonThueVaThanhToan() with cart cleanup...");
+			boolean success = ThanhToanService.luuDonThueVaThanhToan(donThueAo, soTien, phuongThuc, gh);
+
+			if (success) {
+				System.out.println("SUCCESS! Marking payment as completed...");
+				// Mark payment as completed in cache for cross-device notification
+				cache.PaymentCache.markCompleted(maThanhToan);
+				System.out.println("Payment marked completed. isCompleted=" + cache.PaymentCache.isCompleted(maThanhToan));
+
+				// Clear session (if on same device)
+				session.removeAttribute("donThueAo");
+				session.removeAttribute("gioHangAo");
+				session.removeAttribute("paymentMethod");
+				session.removeAttribute("paymentAmount");
+				session.removeAttribute("maThanhToan");
+				session.removeAttribute("paymentQRCreatedTime");
+
+				// Forward to success page
+				request.getRequestDispatcher("/views/khachhang/thanhtoan-success.jsp").forward(request, response);
+			} else {
+				System.out.println("ERROR: ThanhToanService returned false");
+				throw new Exception("Lưu thanh toán thất bại");
+			}
+
+		} catch (Exception e) {
+			System.out.println("EXCEPTION in handlePaymentSuccess: " + e.getMessage());
+			e.printStackTrace();
+			// If error, return to payment page with error message
+			request.setAttribute("errorMessage", "Lỗi khi lưu thanh toán: " + e.getMessage());
+			request.getRequestDispatcher("/views/khachhang/thanhtoan.jsp").forward(request, response);
+		}
+	}
+
+	/**
+	 * Handle cancelled/failed payment
+	 * - Don't save anything to database (rollback)
+	 * - Keep DonThueAo in session for retry
+	 * - Redirect back to payment page
+	 */
+	private void handlePaymentCancel(HttpServletRequest request, HttpServletResponse response,
+			HttpSession session, int maThanhToan) throws IOException {
+
+		try {
+			// Don't update database - ThanhToan was never created (only stored in session)
+			// Just clear payment-specific session attributes
+			session.removeAttribute("paymentMethod");
+			session.removeAttribute("paymentAmount");
+			session.removeAttribute("maThanhToan");
+			session.removeAttribute("paymentQRCreatedTime");
+
+			// Remove from cache too
+			cache.PaymentCache.remove(maThanhToan);
+
+			// Keep donThueAo + gioHangAo in session for retry
+			// Redirect back to payment page
+			response.sendRedirect(request.getContextPath() + "/khachhang/thanhtoan");
+
+		} catch (Exception e) {
+			// If error, still redirect to payment page
+			response.sendRedirect(request.getContextPath() + "/khachhang/thanhtoan");
+		}
+	}
 }

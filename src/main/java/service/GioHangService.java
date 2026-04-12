@@ -269,6 +269,35 @@ public class GioHangService {
 		}
 	}
 
+	/**
+	 * Xóa mục hàng từ giỏ hàng theo danh sách GoiThue IDs (không tạo connection mới)
+	 * Sử dụng cho atomic transaction từ ThanhToanService
+	 *
+	 * @param gh: GioHang object chứa maGioHang
+	 * @param goalThueIds: Danh sách maGoiThue cần xóa
+	 * @param con: Connection hiện tại (từ transaction)
+	 * @return true nếu xóa thành công
+	 * @throws Exception nếu xóa thất bại
+	 */
+	public boolean xoaMucHangTheoGoiThue(GioHang gh, List<Integer> goalThueIds, Connection con) throws Exception {
+		if (gh == null || goalThueIds == null || goalThueIds.isEmpty()) {
+			System.out.println("DEBUG: Skip delete - gh=" + (gh == null ? "null" : gh.getMaGioHang()) +
+							   ", goalThueIds=" + (goalThueIds == null ? "null" : goalThueIds.size()));
+			return true; // Không có gì để xóa
+		}
+
+		boolean rs = mhdao.xoaMucHang(gh.getMaGioHang(), goalThueIds, con);
+
+		if (!rs) {
+			System.out.println("DEBUG: Delete cart items failed for maGioHang=" + gh.getMaGioHang());
+			throw new Exception("Xóa mục hàng khỏi giỏ hàng thất bại");
+		}
+
+		System.out.println("DEBUG: Deleted " + goalThueIds.size() + " cart items for maGioHang=" +
+						   gh.getMaGioHang() + " - GoiThueIds=" + goalThueIds);
+		return true;
+	}
+
 	public double tinhTongTien(GioHang gh, List<Integer> selectedGoiThueIds) {
 		double tong = 0;
 

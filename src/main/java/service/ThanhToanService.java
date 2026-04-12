@@ -2,6 +2,8 @@ package service;
 
 import java.sql.Connection;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import dao.ChiTietDonThueDAO;
@@ -9,6 +11,7 @@ import dao.DonThueDAO;
 import dao.ThanhToanDAO;
 import model.ChiTietDonThue;
 import model.DonThue;
+import model.GioHang;
 import model.ThanhToan;
 import util.Connect;
 
@@ -54,14 +57,16 @@ public class ThanhToanService {
 	 * 1. Create DonThue with status DA_THANH_TOAN
 	 * 2. Create ChiTietDonThue entries linked to DonThue
 	 * 3. Create ThanhToan with status DA_THANH_TOAN (linked to DonThue)
-	 * 4. All 3 records saved atomically - if any fails, rollback everything
+	 * 4. DELETE corresponding MucHang from GioHang
+	 * 5. All 4 records saved atomically - if any fails, rollback everything
 	 *
 	 * @param don: DonThueAo từ session
 	 * @param soTien: Số tiền thanh toán
 	 * @param phuongThuc: Payment method
+	 * @param gh: GioHang object (to delete cart items after order saved)
 	 * @return true nếu lưu thành công
 	 */
-	public static boolean luuDonThueVaThanhToan(DonThue don, double soTien, String phuongThuc)
+	public static boolean luuDonThueVaThanhToan(DonThue don, double soTien, String phuongThuc, GioHang gh)
 			throws Exception {
 		Connection con = null;
 		try {
@@ -81,6 +86,7 @@ public class ThanhToanService {
 			System.out.println("DEBUG: DonThue created with maDon=" + maDon);
 
 			// 2. Lưu tất cả ChiTietDonThue
+			List<Integer> goiThueIds = new ArrayList<>();
 			if (don.getDsChiTiet() != null && !don.getDsChiTiet().isEmpty()) {
 				ChiTietDonThueDAO ctDAO = new ChiTietDonThueDAO();
 				for (ChiTietDonThue ct : don.getDsChiTiet()) {
@@ -88,6 +94,10 @@ public class ThanhToanService {
 					if (!ctDAO.themChiTiet(ct, con)) {
 						con.rollback();
 						throw new Exception("Lưu chi tiết đơn thất bại");
+					}
+					// Collect GoiThue IDs để xóa từ cart sau
+					if (!goiThueIds.contains(ct.getMaGoiThue())) {
+						goiThueIds.add(ct.getMaGoiThue());
 					}
 				}
 			}
@@ -112,9 +122,20 @@ public class ThanhToanService {
 
 			System.out.println("DEBUG: ThanhToan created with maThanhToan=" + maThanhToan);
 
-			// Commit - all 3 records saved atomically
+			// 4. DELETE MucHang from GioHang (items in this order)
+			if (gh != null && !goiThueIds.isEmpty()) {
+				GioHangService gioHangService = new GioHangService();
+				boolean delResult = gioHangService.xoaMucHangTheoGoiThue(gh, goiThueIds, con);
+				if (!delResult) {
+					con.rollback();
+					throw new Exception("Xóa mục hàng khỏi giỏ thất bại");
+				}
+				System.out.println("DEBUG: MucHang deleted from GioHang");
+			}
+
+			// Commit - all 4 records saved atomically
 			con.commit();
-			System.out.println("DEBUG: Transaction committed successfully");
+			System.out.println("DEBUG: Transaction committed successfully - Order + Payment + Cart cleanup");
 			return true;
 
 		} catch (Exception e) {
@@ -139,6 +160,15 @@ public class ThanhToanService {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Overloaded method - backward compatible (without GioHang parameter)
+	 * For cases where cart cleanup is not needed
+	 */
+	public static boolean luuDonThueVaThanhToan(DonThue don, double soTien, String phuongThuc)
+			throws Exception {
+		return luuDonThueVaThanhToan(don, soTien, phuongThuc, null);
 	}
 
 	/**
