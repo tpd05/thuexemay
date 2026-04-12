@@ -332,14 +332,20 @@ public class PaymentMockServlet extends HttpServlet {
 			long amount = Long.parseLong(amountStr);
 
 			// ========== BƯỚC 1: XÁC ĐỊNH USER ==========
-			Integer userID = (session != null) ? (Integer) session.getAttribute("userID") : null;
-			
-			if (userID == null) {
-				// Phone user: sử dụng test user
-				userID = 1;
-				System.out.println("ℹ️ [MOCK PAYMENT] Phone user - sử dụng test userID: " + userID);
+			int userID = -1;
+			if(session!= null)
+			{
+				try
+				{
+					userID = Integer.parseInt((String) session.getAttribute("userID"));
+					
+				}
+				catch (Exception e) {
+					return;
+				}
 			}
-
+			
+			if(userID<0) return;
 			// ========== BƯỚC 2: LẤY GIỎ HÀNG VÀ MỤC HÀNG ==========
 			GioHangDAO gioHangDAO = new GioHangDAO();
 			Connection con = Connect.getInstance().getConnect();
