@@ -115,20 +115,26 @@ public class XeMayDAO {
 			throws SQLException {
 
 		String SQL = """
-				    select xm.maXe from XeMay xm join GoiThue gt on xm.maMauXe = gt.maMauXe where gt.maGoiThue = ? and xm.maXe not in (
-				        select ct.maXe
-				        from ChiTietDonThue ct
-				        where ct.thoiGianBatDau < ?
-				        and ct.thoiGianKetThuc > ?
-				    )
+				SELECT xm.maXe
+				FROM XeMay xm
+				JOIN GoiThue gt ON xm.maMauXe = gt.maMauXe
+				WHERE gt.maGoiThue = ?
+				AND xm.maXe NOT IN (
+					SELECT ct.maXe
+					FROM ChiTietDonThue ct
+					WHERE ct.maGoiThue = ?
+					AND ct.thoiGianBatDau < ?
+					AND ct.thoiGianKetThuc > ?
+				)
 				""";
 
 		List<Integer> list = new ArrayList<>();
 
 		try (PreparedStatement pstm = con.prepareStatement(SQL)) {
 			pstm.setInt(1, maGoiThue);
-			pstm.setTimestamp(2, Timestamp.valueOf(ketThuc));
-			pstm.setTimestamp(3, Timestamp.valueOf(batDau));
+			pstm.setInt(2, maGoiThue);          // ← FIX: Kiểm tra bikes chỉ của CÙNG GoiThue
+			pstm.setTimestamp(3, Timestamp.valueOf(ketThuc));   // request end
+			pstm.setTimestamp(4, Timestamp.valueOf(batDau));    // request start
 
 			try (ResultSet rs = pstm.executeQuery()) {
 				while (rs.next()) {
