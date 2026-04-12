@@ -11,8 +11,8 @@ public class ThanhToanDAO {
 
 	// Tạo record thanh toán mới
 	public int taoThanhToan(ThanhToan tt, Connection con) throws Exception {
-		String sql = "INSERT INTO ThanhToan (maDonThue, soTien, phuongThuc, thoiGianTao, thoiGianThanhToan, trangThai) " +
-					 "VALUES (?, ?, ?, ?, ?, ?)";
+		String sql = "INSERT INTO ThanhToan (maDonThue, soTien, phuongThuc, thoiGianTao, trangThai) " +
+					 "VALUES (?, ?, ?, ?, ?)";
 
 		try (PreparedStatement pstm = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 			// If maDonThue is 0, set as NULL (will be linked later)
@@ -24,8 +24,7 @@ public class ThanhToanDAO {
 			pstm.setFloat(2, tt.getSoTien());
 			pstm.setString(3, tt.getPhuongThuc());
 			pstm.setTimestamp(4, tt.getThoiGianTao());
-			pstm.setTimestamp(5, tt.getThoiGianThanhToan());
-			pstm.setString(6, tt.getTrangThai());
+			pstm.setString(5, tt.getTrangThai());
 
 			int affectedRows = pstm.executeUpdate();
 			if (affectedRows == 0) {
@@ -44,7 +43,7 @@ public class ThanhToanDAO {
 
 	// Lấy thanh toán theo ID
 	public ThanhToan layThanhToanTheoId(int maThanhToan, Connection con) throws Exception {
-		String sql = "SELECT maThanhToan, maDonThue, soTien, phuongThuc, thoiGianTao, thoiGianThanhToan, trangThai " +
+		String sql = "SELECT maThanhToan, maDonThue, soTien, phuongThuc, thoiGianTao, trangThai " +
 					 "FROM ThanhToan WHERE maThanhToan = ?";
 
 		try (PreparedStatement pstm = con.prepareStatement(sql)) {
@@ -60,7 +59,7 @@ public class ThanhToanDAO {
 
 	// Lấy thanh toán theo maDonThue (order ID)
 	public ThanhToan layThanhToanByDonThue(int maDonThue, Connection con) throws Exception {
-		String sql = "SELECT maThanhToan, maDonThue, soTien, phuongThuc, thoiGianTao, thoiGianThanhToan, trangThai " +
+		String sql = "SELECT maThanhToan, maDonThue, soTien, phuongThuc, thoiGianTao, trangThai " +
 					 "FROM ThanhToan WHERE maDonThue = ? ORDER BY thoiGianTao DESC LIMIT 1";
 
 		try (PreparedStatement pstm = con.prepareStatement(sql)) {
@@ -95,7 +94,6 @@ public class ThanhToanDAO {
 		tt.setSoTien(rs.getFloat("soTien"));
 		tt.setPhuongThuc(rs.getString("phuongThuc"));
 		tt.setThoiGianTao(rs.getTimestamp("thoiGianTao"));
-		tt.setThoiGianThanhToan(rs.getTimestamp("thoiGianThanhToan"));
 		tt.setTrangThai(rs.getString("trangThai"));
 		return tt;
 	}

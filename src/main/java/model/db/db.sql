@@ -156,8 +156,8 @@ CREATE TABLE ThanhToan (
     maDonThue INT,
     soTien FLOAT,
     phuongThuc VARCHAR(50),
+    thoiGianTao DATETIME,
     trangThai VARCHAR(50),
-    createdAt DATETIME,
     FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue)
         ON DELETE CASCADE
 );
@@ -204,18 +204,3 @@ CREATE TABLE MucDanhSachMongMuon (
     FOREIGN KEY (maGoiThue) REFERENCES GoiThue(maGoiThue)
 );
 
-ALTER TABLE `thanhtoan` MODIFY COLUMN `soTien` BIGINT NOT NULL;
-
--- 2. Thêm các field mới cho Momo integration
-ALTER TABLE `thanhtoan` 
-ADD COLUMN `requestId` VARCHAR(100) UNIQUE COMMENT 'Momo request ID' AFTER `soTien`,
--- ADD COLUMN `transactionId` VARCHAR(100) COMMENT 'Momo transaction ID' AFTER `requestId`,
-ADD COLUMN `expiredAt` DATETIME COMMENT 'QR code expiration time (3 minutes)' AFTER `createdAt`,
-ADD COLUMN `momoResponse` LONGTEXT COMMENT 'Momo API response JSON' AFTER `expiredAt`;
--- ADD COLUMN `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `momoResponse`;
-
--- 3. Thêm các index để tối ưu truy vấn
-ALTER TABLE `thanhtoan` 
-ADD INDEX `idx_requestId` (`requestId`),
-ADD INDEX `idx_trangThai` (`trangThai`),
-ADD INDEX `idx_createdAt` (`createdAt`);
