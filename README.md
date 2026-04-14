@@ -32,7 +32,7 @@ Kết quả file WAR sẽ nằm tại: `target/thuexemay.war`
 # Sinh database
 Vào thuexemay\src\main\java\model\db.sql copy db.sql vào MySQL để tạo database và bảng cần thiết.
 
-Chỉnh sửa file `src/main/resources/db.xml`:
+tạo mới file  trong `src/main/resources/db.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
