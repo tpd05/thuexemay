@@ -4,9 +4,9 @@
 
 ## 🛠️ Yêu Cầu Hệ Thống
 
-- **Java**: JDK 17 trở lên
-- **Maven**: 3.8.0 trở lên
-- **MySQL**: 5.7 hoặc 8.0
+- **Java**: JDK 17
+- **eclipse**
+- **xampp**
 - **Tomcat**: 9.x (để deploy)
 
 ## 📋 Hướng Dẫn Cài Đặt
@@ -15,14 +15,22 @@
 
 ```bash
 # Clone project
-git clone <repository-url>
-cd thuexemay
-
-# Tạo database
-Vào thuexemay\src\main\java\model\db.sql copy db.sql vào MySQL để tạo database và bảng cần thiết.
+git clone -b demo https://github.com/tpd05/thuexemay.git
 ```
+### 3. Build Project
+
+build lại project bằng cmd hoặc bằng eclipse 
+
+#updateproject
+maven -> update project
+
+Kết quả file WAR sẽ nằm tại: `target/thuexemay.war`
+``
 
 ### 2. Cấu Hình Database Connection
+
+# Sinh database
+Vào thuexemay\src\main\java\model\db.sql copy db.sql vào MySQL để tạo database và bảng cần thiết.
 
 Chỉnh sửa file `src/main/resources/db.xml`:
 
@@ -36,11 +44,7 @@ Chỉnh sửa file `src/main/resources/db.xml`:
 </database>
 ```
 
-### 3. Build Project
 
-build lại project bằng cmd hoặc bằng eclipse maven->update project
-
-Kết quả file WAR sẽ nằm tại: `target/thuexemay.war`
 
 ## 🚀 Chạy Project
 
