@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -14,10 +15,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import dao.ChiNhanhDAO;
 import dao.ChiTietDonThueDAO;
 import dao.GioHangDAO;
 import dao.GoiThueDAO;
 import dao.MucHangDAO;
+import model.ChiNhanh;
 import model.DonThue;
 import model.GioHang;
 import model.GoiThue;
@@ -33,54 +36,12 @@ public class GioHangServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		String api = request.getParameter("api");
-		String checkout = request.getParameter("checkout");
 
 		HttpSession session = request.getSession();
 		Integer userID = (Integer) session.getAttribute("userID");
 
 		if (userID == null) {
 			response.sendRedirect(request.getContextPath() + "/views/auth/dangnhap.jsp");
-			return;
-		}
-
-		// Route: /khachhang/giohang?checkout=1 → show preview + confirmation page
-		if ("1".equals(checkout)) {
-			try {
-				Connection con = Connect.getInstance().getConnect();
-				GioHangDAO gioHangDAO = new GioHangDAO();
-				MucHangDAO mucHangDAO = new MucHangDAO();
-				GoiThueDAO goiThueDAO = new GoiThueDAO();
-
-				GioHang gioHang = gioHangDAO.layGioHangByUserID(userID, con);
-
-				if (gioHang == null) {
-					response.sendRedirect(request.getContextPath() + "/khachhang/giohang");
-					return;
-				}
-
-				// Lấy mục hàng có đầy đủ thông tin
-				List<MucHang> mucHangList = mucHangDAO.LayMucHangCuaGio(gioHang.getMaGioHang(), con);
-
-				for (MucHang mh : mucHangList) {
-					GoiThue gt = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
-					mh.setGoiThue(gt);
-				}
-
-				// Tạo đơn ảo
-				DonThueService donService = new DonThueService();
-				DonThue donThueAo = donService.taoDonThueAo(gioHang, mucHangList);
-
-				// Lưu vào session để dùng trong JSP
-				session.setAttribute("donThueAo", donThueAo);
-				session.setAttribute("gioHangAo", gioHang);
-
-				// Forward đến checkout.jsp
-				request.getRequestDispatcher("/views/khachhang/checkout.jsp").forward(request, response);
-
-			} catch (Exception e) {
-				request.setAttribute("errorMessage", e.getMessage());
-				request.getRequestDispatcher("/views/khachhang/giohang.jsp").forward(request, response);
-			}
 			return;
 		}
 
@@ -95,38 +56,57 @@ public class GioHangServlet extends HttpServlet {
 				GioHangDAO gioHangDAO = new GioHangDAO();
 				MucHangDAO mucHangDAO = new MucHangDAO();
 				GoiThueDAO goiThueDAO = new GoiThueDAO();
+			ChiNhanhDAO chiNhanhDAO = new ChiNhanhDAO(con);
 
-				GioHang gioHang = gioHangDAO.layGioHangByUserID(userID, con);
+			GioHang gioHang = gioHangDAO.layGioHangByUserID(userID, con);
 
-				if (gioHang != null) {
-					out.println("  <maGioHang>" + gioHang.getMaGioHang() + "</maGioHang>");
-					out.println("  <userID>" + gioHang.getUserID() + "</userID>");
-					out.println("  <diaChiNhanXe>" + escapeXml(gioHang.getDiaChiNhanXe()) + "</diaChiNhanXe>");
+			if (gioHang != null) {
+				out.println("  <maGioHang>" + gioHang.getMaGioHang() + "</maGioHang>");
+				out.println("  <userID>" + gioHang.getUserID() + "</userID>");
+				out.println("  <diaChiNhanXe>" + escapeXml(gioHang.getDiaChiNhanXe()) + "</diaChiNhanXe>");
 
-					List<MucHang> mucHangList = mucHangDAO.LayMucHangCuaGio(gioHang.getMaGioHang(), con);
-					out.println("  <items>");
-
+				List<MucHang> mucHangList = mucHangDAO.LayMucHangCuaGio(gioHang.getMaGioHang(), con);
+				System.out.println("[GioHangServlet] LayMucHangCuaGio result size: " + (mucHangList != null ? mucHangList.size() : "NULL"));
+				if (mucHangList != null) {
 					for (MucHang mh : mucHangList) {
-						GoiThue goiThue = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
-						out.println("    <item>");
-						out.println("      <maGoiThue>" + mh.getMaGoiThue() + "</maGoiThue>");
-						out.println("      <tenGoiThue>" + (goiThue != null ? escapeXml(goiThue.getTenGoiThue()) : "N/A") + "</tenGoiThue>");
-						out.println("      <soLuong>" + mh.getSoLuong() + "</soLuong>");
-						out.println("      <giaNgay>" + (goiThue != null ? goiThue.getGiaNgay() : 0) + "</giaNgay>");
-						out.println("      <giaGio>" + (goiThue != null ? goiThue.getGiaGio() : 0) + "</giaGio>");
-						if (mh.getThoiGianBatDau() != null) {
-							out.println("      <thoiGianBatDau>" + mh.getThoiGianBatDau() + "</thoiGianBatDau>");
-						}
-						if (mh.getThoiGianKetThuc() != null) {
-							out.println("      <thoiGianKetThuc>" + mh.getThoiGianKetThuc() + "</thoiGianKetThuc>");
-						}
-						out.println("    </item>");
+						System.out.println("[GioHangServlet] MucHang: maGoiThue=" + mh.getMaGoiThue() + ", soLuong=" + mh.getSoLuong());
 					}
-					out.println("  </items>");
 				}
+				
+				out.println("  <items>");
 
-				out.println("</gio_hang>");
-			} catch (Exception e) {
+				for (MucHang mh : mucHangList) {
+					GoiThue goiThue = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
+					out.println("    <item>");
+					out.println("      <maGoiThue>" + mh.getMaGoiThue() + "</maGoiThue>");
+					out.println("      <tenGoiThue>" + (goiThue != null ? escapeXml(goiThue.getTenGoiThue()) : "N/A") + "</tenGoiThue>");
+					out.println("      <soLuong>" + mh.getSoLuong() + "</soLuong>");
+					out.println("      <giaNgay>" + (goiThue != null ? goiThue.getGiaNgay() : 0) + "</giaNgay>");
+					out.println("      <giaGio>" + (goiThue != null ? goiThue.getGiaGio() : 0) + "</giaGio>");
+					if (mh.getThoiGianBatDau() != null) {
+						out.println("      <thoiGianBatDau>" + mh.getThoiGianBatDau() + "</thoiGianBatDau>");
+					}
+					if (mh.getThoiGianKetThuc() != null) {
+						out.println("      <thoiGianKetThuc>" + mh.getThoiGianKetThuc() + "</thoiGianKetThuc>");
+					}
+					
+					// Thêm branch info từ GoiThue
+					if (goiThue != null) {
+						ChiNhanh chiNhanh = chiNhanhDAO.layChiNhanhTheoId(goiThue.getMaChiNhanh(), con);
+						if (chiNhanh != null) {
+							out.println("      <branch>");
+							out.println("        <maChiNhanh>" + chiNhanh.getMaChiNhanh() + "</maChiNhanh>");
+							out.println("        <tenChiNhanh>" + escapeXml(chiNhanh.getTenChiNhanh()) + "</tenChiNhanh>");
+							out.println("        <diaDiem>" + escapeXml(chiNhanh.getDiaDiem()) + "</diaDiem>");
+							out.println("      </branch>");
+						}
+					}
+					out.println("    </item>");
+				}
+				
+				out.println("  </items>");
+			out.println("</gio_hang>");
+		}} catch (Exception e) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				try (PrintWriter out = response.getWriter()) {
 					out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -176,28 +156,38 @@ public class GioHangServlet extends HttpServlet {
 
 			if ("checkAvailable".equals(action)) {
 				// Kiểm tra số xe còn trống cho khoảng thời gian
-				int maGoiThue = Integer.parseInt(request.getParameter("maGoiThue"));
-				String thoiGianBatDauStr = request.getParameter("thoiGianBatDau");
-				String thoiGianKetThucStr = request.getParameter("thoiGianKetThuc");
+				try {
+					int maGoiThue = Integer.parseInt(request.getParameter("maGoiThue"));
+					String thoiGianBatDauStr = request.getParameter("thoiGianBatDau");
+					String thoiGianKetThucStr = request.getParameter("thoiGianKetThuc");
 
-				DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-				LocalDateTime thoiGianBatDau = LocalDateTime.parse(thoiGianBatDauStr, formatter);
-				LocalDateTime thoiGianKetThuc = LocalDateTime.parse(thoiGianKetThucStr, formatter);
+					DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+					LocalDateTime thoiGianBatDau = LocalDateTime.parse(thoiGianBatDauStr, formatter);
+					LocalDateTime thoiGianKetThuc = LocalDateTime.parse(thoiGianKetThucStr, formatter);
 
-				// Tính số xe còn trống
-				int tongXe = goiThueDAO.demTongXe(maGoiThue, con);
-				ChiTietDonThueDAO ctDAO = new ChiTietDonThueDAO();
-				int daThue = ctDAO.demXeDaThue(maGoiThue, thoiGianBatDau, thoiGianKetThuc, con);
-				int soLuongCon = tongXe - daThue;
+					// Tính số xe còn trống
+					int tongXe = goiThueDAO.demTongXe(maGoiThue, con);
+					ChiTietDonThueDAO ctDAO = new ChiTietDonThueDAO();
+					int daThue = ctDAO.demXeDaThue(maGoiThue, thoiGianBatDau, thoiGianKetThuc, con);
+					int soLuongCon = tongXe - daThue;
 
-				try (PrintWriter out = response.getWriter()) {
-					out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-					out.println("<response>");
-					out.println("  <status>success</status>");
-					out.println("  <soLuongCon>" + soLuongCon + "</soLuongCon>");
-					out.println("  <tongXe>" + tongXe + "</tongXe>");
-					out.println("  <daThue>" + daThue + "</daThue>");
-					out.println("</response>");
+					try (PrintWriter out = response.getWriter()) {
+						out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+						out.println("<response>");
+						out.println("  <status>success</status>");
+						out.println("  <soLuongCon>" + soLuongCon + "</soLuongCon>");
+						out.println("  <tongXe>" + tongXe + "</tongXe>");
+						out.println("  <daThue>" + daThue + "</daThue>");
+						out.println("</response>");
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					try (PrintWriter out = response.getWriter()) {
+						out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+						out.println("<response>");
+						out.println("  <error>Lỗi kiểm tra xe: " + escapeXml(e.getMessage()) + "</error>");
+						out.println("</response>");
+					}
 				}
 
 			} else if ("update".equals(action)) {
@@ -251,11 +241,6 @@ public class GioHangServlet extends HttpServlet {
 					out.println("  <status>" + (success ? "success" : "error") + "</status>");
 					out.println("</response>");
 				}
-			} else if ("checkout".equals(action)) {
-				// Redirect to preview/confirmation page
-				response.sendRedirect(request.getContextPath() + "/khachhang/giohang?checkout=1");
-				return;
-				
 			} else if ("confirmCheckout".equals(action)) {
 				// Xác nhận tạo đơn từ session
 				DonThue donThueAo = (DonThue) session.getAttribute("donThueAo");
@@ -324,18 +309,83 @@ public class GioHangServlet extends HttpServlet {
 			} else if ("prepareCheckout".equals(action)) {
 				// Chuẩn bị checkout - tạo DonThueAo từ giỏ hàng
 				try {
+					String loaiNhanXe = request.getParameter("loaiNhanXe");
 					String diaChiNhanXe = request.getParameter("diaChiNhanXe");
+					String maChiNhanhStr = request.getParameter("maChiNhanh");
+					
+					// Nếu nhận xe tại cửa hàng, lấy địa chỉ chi nhánh
+					if ("branch".equals(loaiNhanXe) && maChiNhanhStr != null && !maChiNhanhStr.isEmpty()) {
+						int maChiNhanh = Integer.parseInt(maChiNhanhStr);
+						ChiNhanhDAO chiNhanhDAO = new ChiNhanhDAO(con);
+						ChiNhanh chiNhanh = chiNhanhDAO.layChiNhanhTheoId(maChiNhanh, con);
+						
+						if (chiNhanh != null && chiNhanh.getDiaDiem() != null) {
+							diaChiNhanXe = chiNhanh.getDiaDiem();
+							System.out.println("DEBUG prepareCheckout: Using branch address - " + diaChiNhanXe);
+						}
+					}
+					
+					// Cập nhật địa chỉ vào giỏ hàng
 					if (diaChiNhanXe != null && !diaChiNhanXe.isEmpty()) {
 						gioHang.setDiaChiNhanXe(diaChiNhanXe);
 						gioHangDAO.capNhatDiaChi(gioHang, con);
+						System.out.println("DEBUG prepareCheckout: Updated cart address - " + diaChiNhanXe);
 					}
 
-					// Lấy mục hàng có đầy đủ thông tin
-					List<MucHang> mucHangList = mucHangDAO.LayMucHangCuaGio(gioHang.getMaGioHang(), con);
-
-					for (MucHang mh : mucHangList) {
-						GoiThue gt = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
-						mh.setGoiThue(gt);
+					// Lấy thông tin item từ frontend (format mới: itemCount, itemBatDau_N, etc.)
+					String itemCountStr = request.getParameter("itemCount");
+					int itemCount = (itemCountStr != null) ? Integer.parseInt(itemCountStr) : 0;
+					
+					System.out.println("DEBUG prepareCheckout: itemCount=" + itemCount);
+					
+					// Nếu có item từ frontend, dùng chúng
+					List<MucHang> mucHangList = new ArrayList<>();
+					
+					if (itemCount > 0) {
+						// Parse items từ frontend
+						for (int i = 0; i < itemCount; i++) {
+							String maGoiThue = request.getParameter("itemMaGoiThue_" + i);
+							String batDau = request.getParameter("itemBatDau_" + i);
+							String ketThuc = request.getParameter("itemKetThuc_" + i);
+							String soLuongStr = request.getParameter("itemSoLuong_" + i);
+							
+							System.out.println("Item " + i + ": maGoiThue=" + maGoiThue + 
+									", batDau=" + batDau + ", ketThuc=" + ketThuc + ", soLuong=" + soLuongStr);
+							
+							if (batDau == null || batDau.isEmpty()) {
+								throw new Exception("Thiếu thời gian thuê cho item " + (i+1));
+							}
+							if (ketThuc == null || ketThuc.isEmpty()) {
+								throw new Exception("Thiếu thời gian trả cho item " + (i+1));
+							}
+							
+							// Tạo MucHang mới từ dữ liệu frontend
+							MucHang mh = new MucHang();
+							mh.setMaGioHang(gioHang.getMaGioHang());
+							mh.setMaGoiThue(Integer.parseInt(maGoiThue));
+							mh.setSoLuong(Integer.parseInt(soLuongStr));
+							
+							// Convert datetime-local string (yyyy-MM-ddTHH:mm) to LocalDateTime
+							DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+							LocalDateTime batDauLDT = LocalDateTime.parse(batDau, formatter);
+							LocalDateTime ketThucLDT = LocalDateTime.parse(ketThuc, formatter);
+							
+							mh.setThoiGianBatDau(batDauLDT);
+							mh.setThoiGianKetThuc(ketThucLDT);
+							
+							// Lấy GoiThue detail
+							GoiThue gt = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
+							mh.setGoiThue(gt);
+							
+							mucHangList.add(mh);
+						}
+					} else {
+						// Fallback: Lấy từ database nếu không có item từ frontend
+						mucHangList = mucHangDAO.LayMucHangCuaGio(gioHang.getMaGioHang(), con);
+						for (MucHang mh : mucHangList) {
+							GoiThue gt = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
+							mh.setGoiThue(gt);
+						}
 					}
 
 					// Tạo đơn ảo
@@ -354,6 +404,8 @@ public class GioHangServlet extends HttpServlet {
 						out.println("</response>");
 					}
 				} catch (Exception e) {
+					System.out.println("ERROR in prepareCheckout: " + e.getMessage());
+					e.printStackTrace();
 					try (PrintWriter out = response.getWriter()) {
 						out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 						out.println("<response>");

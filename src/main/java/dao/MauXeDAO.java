@@ -139,5 +139,14 @@ public class MauXeDAO {
         }
         return null;
     }
+	// Cập nhật mẫu xe
+	public void capNhatMauXe(MauXe mauXe) throws SQLException {
+		String sql = "UPDATE MauXe SET urlHinhAnh = ? WHERE maMauXe = ?";
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
+			ps.setString(1, mauXe.getUrlHinhAnh());
+			ps.setInt(2, mauXe.getMaMauXe());
+			ps.executeUpdate();
+		}
+	}
 	
 }

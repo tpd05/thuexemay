@@ -50,10 +50,12 @@ public class AuthFilter extends HttpFilter implements Filter {
 
 	    if (path.startsWith("/dangnhap") || path.startsWith("/dangky")
 	        || path.startsWith("/views/auth")
-	        || path.startsWith("/khachhang/payment-mock")
+	        || path.startsWith("/khachhang/thanhtoan/mock")
 	        || path.startsWith("/css")
 	        || path.startsWith("/js")
+	        || path.startsWith("/dist")
 	        || path.startsWith("/images")
+	        || path.startsWith("/public")
 	        || path.equals("/")
 	        || path.equals("")) {
 	        chain.doFilter(req, resp);

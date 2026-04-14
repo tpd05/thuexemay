@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Project (Maven)",
+			"type": "shell",
+			"command": "mvn",
+			"isBackground": false,
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Project (Maven) - Phase 2",
+			"type": "shell",
+			"command": "mvn clean package -DskipTests",
+			"group": "build"
+		}
+	]
+}

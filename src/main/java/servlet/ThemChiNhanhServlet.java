@@ -87,12 +87,24 @@ public class ThemChiNhanhServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setContentType("application/xml;charset=UTF-8");
         request.setCharacterEncoding("UTF-8");
+        response.setContentType("application/xml;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 
-        if (!KiemTraDoiTac.checkDoiTac(request, response)) return;
+        // Check authentication without redirect for AJAX POST
+        javax.servlet.http.HttpSession sess = request.getSession(false);
+        if (sess == null || !"DOI_TAC".equals(sess.getAttribute("role"))) {
+            guiPhanHoiXML(response, 401, "error", "Không có quyền truy cập");
+            return;
+        }
 
-        Integer maDoiTac = KiemTraDoiTac.layMaDoiTacCuaPhien(request);
+        Integer maDoiTac = (Integer) sess.getAttribute("maDoiTac");
+        
+        // Check if maDoiTac is null
+        if (maDoiTac == null) {
+            guiPhanHoiXML(response, 400, "error", "Không tìm thấy mã đối tác trong session");
+            return;
+        }
 
         String tenChiNhanh = request.getParameter("tenChiNhanh");
         String diaDiem = request.getParameter("diaDiem");
@@ -109,8 +121,8 @@ public class ThemChiNhanhServlet extends HttpServlet {
 
         ChiNhanh cn = new ChiNhanh();
         cn.setMaDoiTac(maDoiTac);
-        cn.setTenChiNhanh(tenChiNhanh);
-        cn.setDiaDiem(diaDiem);
+        cn.setTenChiNhanh(tenChiNhanh.trim());
+        cn.setDiaDiem(diaDiem.trim());
 
         try {
             service.themChiNhanh(cn);
@@ -118,6 +130,7 @@ public class ThemChiNhanhServlet extends HttpServlet {
             guiPhanHoiXML(response, 201, "success", "Thêm chi nhánh thành công!");
 
         } catch (RuntimeException e) {
+            e.printStackTrace();
             guiPhanHoiXML(response, 400, "error", e.getMessage());
 
         } catch (Exception e) {

@@ -2,7 +2,7 @@ package servlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
+import java.net.InetAddress;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,182 +11,185 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import dao.DonThueDAO;
+import cache.PaymentCache;
 import model.DonThue;
 import service.ThanhToanService;
-import util.Connect;
 
-@WebServlet("/khachhang/payment")
+/**
+ * PaymentServlet - Xử lý thanh toán (Redesigned)
+ *
+ * Flow:
+ * - GET /khachhang/thanhtoan → Show payment page (get DonThueAo from session created by GioHangServlet)
+ * - POST /khachhang/thanhtoan?action=taoQR → Create ThanhToan in DB, return maThanhToan for mock payment
+ * - GET /khachhang/thanhtoan/mock?maThanhToan=X → PUBLIC PAGE - validate from DB, simulate payment
+ * - /khachhang/thanhtoan/callback → Callback from mock payment (update DB status, save DonThue)
+ */
+@WebServlet("/khachhang/thanhtoan")
 public class PaymentServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		
+
 		HttpSession session = request.getSession();
 		Integer userID = (Integer) session.getAttribute("userID");
 
+		// Check authentication
 		if (userID == null) {
 			response.sendRedirect(request.getContextPath() + "/views/auth/dangnhap.jsp");
 			return;
 		}
 
-		String maDonStr = request.getParameter("maDon");
-		if (maDonStr == null || maDonStr.isEmpty()) {
-			response.sendRedirect(request.getContextPath() + "/khachhang/dashboard");
-			return;
-		}
-
 		try {
-			int maDon = Integer.parseInt(maDonStr);
-			
-			// Lấy thông tin đơn thuê để hiển thị giá tiền
-			Connection con = Connect.getInstance().getConnect();
-			DonThueDAO donDAO = new DonThueDAO();
-			DonThue don = donDAO.layDonThueTheoId(maDon, con);
-			con.close();
-			
-			if (don == null) {
-				response.sendRedirect(request.getContextPath() + "/khachhang/dashboard");
+			// Lấy DonThueAo từ session (được tạo từ GioHangServlet.prepareCheckout)
+			DonThue donThueAo = (DonThue) session.getAttribute("donThueAo");
+			if (donThueAo == null) {
+				// Không có đơn ảo, redirect về giỏ hàng
+				response.sendRedirect(request.getContextPath() + "/khachhang/giohang");
 				return;
 			}
-			
-			request.setAttribute("maDon", maDon);
-			request.setAttribute("don", don);
-			request.getRequestDispatcher("/views/khachhang/payment.jsp").forward(request, response);
-			
+
+			// Tính tổng tiền
+			double soTien = ThanhToanService.tinhTongTienDonThue(donThueAo.getDsChiTiet());
+
+			// Set attributes for JSP
+			request.setAttribute("donThueAo", donThueAo);
+			request.setAttribute("soTien", soTien);
+
+			// Forward to thanhtoan.jsp
+			request.getRequestDispatcher("/views/khachhang/thanhtoan.jsp").forward(request, response);
+
 		} catch (Exception e) {
-			response.sendRedirect(request.getContextPath() + "/khachhang/dashboard");
+			request.setAttribute("errorMessage", "Lỗi: " + e.getMessage());
+			request.getRequestDispatcher("/views/khachhang/thanhtoan.jsp").forward(request, response);
 		}
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
-		
-		String action = request.getParameter("action");
+
 		HttpSession session = request.getSession();
 		Integer userID = (Integer) session.getAttribute("userID");
 
+		// Check authentication
 		if (userID == null) {
-			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			try (PrintWriter out = response.getWriter()) {
-				out.println("<?xml version=\"1.0\"?><error>Chưa đăng nhập</error>");
-			}
+			sendJsonResponse(response, "error", "Bạn cần đăng nhập");
 			return;
 		}
 
-		response.setContentType("application/xml; charset=UTF-8");
+		String action = request.getParameter("action");
+		response.setContentType("application/json; charset=UTF-8");
 
-		if ("createQR".equals(action)) {
-			handleCreateQR(request, response);
-		} else if ("checkStatus".equals(action)) {
-			handleCheckStatus(request, response);
+		if ("taoQR".equals(action)) {
+			handleTaoQR(request, response, session, userID);
+		} else {
+			sendJsonResponse(response, "error", "Action không hợp lệ");
 		}
 	}
-	
+
 	/**
-	 * Xử lý tạo QR code thanh toán
-	 * 
-	 * Lưu ý: DonThue sẽ được tạo sau khi Momo callback thành công
-	 * Tạm thời chỉ lưu thông tin thanh toán vào THANHTOAN table
+	 * Handle taoQR action - Create temporary payment session (don't save to DB yet)
+	 *
+	 * Parameters:
+	 * - phuongThuc: Payment method (EWALLET, CARD)
+	 *
+	 * Flow:
+	 * 1. Get DonThueAo from session
+	 * 2. Calculate total
+	 * 3. Store payment info in session ONLY (NOT in DB yet)
+	 * 4. Generate temporary maThanhToan ID (base on timestamp)
+	 * 5. Return QR code URL with temporary ID
+	 * 6. ThanhToan will be created in DB ONLY if payment is confirmed
 	 */
-	private void handleCreateQR(HttpServletRequest request, HttpServletResponse response) 
-			throws IOException {
+	private void handleTaoQR(HttpServletRequest request, HttpServletResponse response,
+							  HttpSession session, Integer userID) throws IOException {
 		try {
-			HttpSession session = request.getSession();
-			Integer userID = (Integer) session.getAttribute("userID");
-			
-			if (userID == null) {
-				response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				try (PrintWriter out = response.getWriter()) {
-					out.println("<?xml version=\"1.0\"?>");
-					out.println("<response>");
-					out.println("  <status>error</status>");
-					out.println("  <message>Chưa đăng nhập</message>");
-					out.println("</response>");
-				}
+			String phuongThuc = request.getParameter("phuongThuc");
+			if (phuongThuc == null) {
+				sendJsonResponse(response, "error", "Thiếu tham số phuongThuc");
 				return;
 			}
-			
-			String method = request.getParameter("method"); // EWALLET, CARD
-			long soTien = Long.parseLong(request.getParameter("soTien"));
 
-			// Tạo URLs
-			String baseUrl = request.getScheme() + "://" + request.getServerName() + 
-					(request.getServerPort() == 80 ? "" : ":" + request.getServerPort()) + 
-					request.getContextPath();
-			String redirectUrl = baseUrl + "/khachhang/lich-su-don-hang";
-			String callbackUrl = baseUrl + "/khachhang/payment-callback";
-			
-			// Sử dụng mock payment thay vì Momo API thực tế
-			String payUrl = baseUrl + "/khachhang/payment-mock";
-			
-			// Extract requestId từ response (tạo trong service)
-			String requestId = "THUEXE" + System.currentTimeMillis();
-			
-			// ❌ KHÔNG TẠO THANHTOAN ở ĐÂY (FOREIGN KEY FAIL)
-			// ✅ THANHTOAN sẽ được tạo sau khi DonThue tạo thành công trong PaymentMockServlet
-			// Lưu requestId + soTien vào session để PaymentMockServlet sử dụng
-			session.setAttribute("paymentRequestId", requestId);
+			// 1. Get DonThueAo from session
+			DonThue donThueAo = (DonThue) session.getAttribute("donThueAo");
+			if (donThueAo == null) {
+				sendJsonResponse(response, "error", "Không tìm thấy đơn ảo. Quay lại giỏ hàng");
+				return;
+			}
+
+			// 2. Calculate total
+			double soTien = ThanhToanService.tinhTongTienDonThue(donThueAo.getDsChiTiet());
+			if (soTien <= 0) {
+				sendJsonResponse(response, "error", "Số tiền không hợp lệ");
+				return;
+			}
+
+			// 3. Generate temporary maThanhToan (NOT saved to DB yet)
+			long qrCreatedTime = System.currentTimeMillis();
+			int maThanhToanTemp = (int)(qrCreatedTime / 1000) % 1000000; // Use timestamp as temp ID
+
+			// 4. Store payment info in CACHE (for cross-device validation)
+			// Include DonThueAo so Device B can complete payment without session
+			PaymentCache.put(maThanhToanTemp, soTien, phuongThuc, donThueAo);
+
+			// 5. Store payment info in SESSION (for same-device processing)
+			session.setAttribute("paymentMethod", phuongThuc);
 			session.setAttribute("paymentAmount", soTien);
-			session.setAttribute("paymentMethod", method);
+			session.setAttribute("maThanhToan", maThanhToanTemp);
+			session.setAttribute("paymentQRCreatedTime", qrCreatedTime);
 
+			// 5. Return QR code URL (maThanhToan is temporary, will be created in DB on success)
+			String serverHostName = getServerIP(request);
+			String mockPageUrl = request.getScheme() + "://" + serverHostName +
+								(request.getServerPort() == 80 ? "" : ":" + request.getServerPort()) +
+								request.getContextPath() + "/khachhang/thanhtoan/mock?maThanhToan=" + maThanhToanTemp;
+
+			response.setContentType("application/json; charset=UTF-8");
 			try (PrintWriter out = response.getWriter()) {
-				out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-				out.println("<response>");
-				out.println("  <status>success</status>");
-				out.println("  <payUrl>" + payUrl + "</payUrl>");
-				out.println("  <requestId>" + requestId + "</requestId>");
-				out.println("</response>");
+				out.println("{");
+				out.println("  \"status\": \"success\",");
+				out.println("  \"mockPageUrl\": \"" + mockPageUrl + "\",");
+				out.println("  \"maThanhToan\": " + maThanhToanTemp + ",");
+				out.println("  \"timeoutSeconds\": 180");
+				out.println("}");
 			}
 
 		} catch (Exception e) {
-			try (PrintWriter out = response.getWriter()) {
-				out.println("<?xml version=\"1.0\"?>");
-				out.println("<response>");
-				out.println("  <status>error</status>");
-				out.println("  <message>" + escapeXml(e.getMessage()) + "</message>");
-				out.println("</response>");
-			}
+			sendJsonResponse(response, "error", "Lỗi: " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
-	
-	/**
-	 * Kiểm tra trạng thái thanh toán
-	 */
-	private void handleCheckStatus(HttpServletRequest request, HttpServletResponse response) 
+
+	private void sendJsonResponse(HttpServletResponse response, String status, String message)
 			throws IOException {
-		try {
-			String requestId = request.getParameter("requestId");
-			
-			// Gọi static method checkPaymentStatus
-			boolean success = ThanhToanService.checkPaymentStatus(requestId);
-
-			try (PrintWriter out = response.getWriter()) {
-				out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-				out.println("<response>");
-				out.println("  <status>" + (success ? "success" : "failed") + "</status>");
-				out.println("</response>");
-			}
-
-		} catch (Exception e) {
-			try (PrintWriter out = response.getWriter()) {
-				out.println("<?xml version=\"1.0\"?>");
-				out.println("<response>");
-				out.println("  <status>error</status>");
-				out.println("  <message>" + escapeXml(e.getMessage()) + "</message>");
-				out.println("</response>");
-			}
+		response.setContentType("application/json; charset=UTF-8");
+		try (PrintWriter out = response.getWriter()) {
+			out.println("{");
+			out.println("  \"status\": \"" + status + "\",");
+			out.println("  \"message\": \"" + message + "\"");
+			out.println("}");
 		}
 	}
-	
-	private String escapeXml(String text) {
-		if (text == null) return "";
-		return text.replace("&", "&amp;")
-				   .replace("<", "&lt;")
-				   .replace(">", "&gt;")
-				   .replace("\"", "&quot;")
-				   .replace("'", "&apos;");
+
+	/**
+	 * Lấy IP thực của server
+	 * - Nếu request đến localhost/127.0.0.1 → lấy IP local của máy
+	 * - Nếu request đến IP khác → sử dụng IP đó
+	 */
+	private String getServerIP(HttpServletRequest request) {
+		String serverName = request.getServerName();
+
+		// Nếu là localhost / 127.0.0.1, lấy IP thực của máy
+		if ("localhost".equals(serverName) || "127.0.0.1".equals(serverName)) {
+			try {
+				InetAddress inetAddress = InetAddress.getLocalHost();
+				return inetAddress.getHostAddress();
+			} catch (Exception e) {
+				// Fallback về getServerName nếu lỗi
+				return serverName;
+			}
+		}
+
+		return serverName;
 	}
 }

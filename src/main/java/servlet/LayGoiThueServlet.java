@@ -61,7 +61,6 @@ public class LayGoiThueServlet extends HttpServlet {
         	       .append("        <giaNgay>").append(gt.getGiaNgay()).append("</giaNgay>\n")
         	       .append("        <giaGio>").append(gt.getGiaGio()).append("</giaGio>\n")
         	       .append("        <phuThu>").append(gt.getPhuThu()).append("</phuThu>\n")
-        	       .append("        <giamGia>").append(gt.getGiamGia()).append("</giamGia>\n")
         	       .append("    </goiThue>\n");
         	}
 

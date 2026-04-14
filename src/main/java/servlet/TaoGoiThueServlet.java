@@ -57,7 +57,6 @@ public class TaoGoiThueServlet extends HttpServlet {
                    .append("        <giaNgay>").append(gt.getGiaNgay()).append("</giaNgay>\n")
                    .append("        <giaGio>").append(gt.getGiaGio()).append("</giaGio>\n")
                    .append("        <phuThu>").append(gt.getPhuThu()).append("</phuThu>\n")
-                   .append("        <giamGia>").append(gt.getGiamGia()).append("</giamGia>\n")
                    .append("    </goiThue>\n");
             }
             xml.append("</goiThues>");
@@ -86,7 +85,6 @@ public class TaoGoiThueServlet extends HttpServlet {
         String giaNgayStr    = request.getParameter("giaNgay");
         String giaGioStr     = request.getParameter("giaGio");
         String phuThuStr     = request.getParameter("phuThu");
-        String giamGiaStr    = request.getParameter("giamGia");
 
         // Validate bắt buộc
         if (maMauXeStr == null || maMauXeStr.trim().isEmpty()) {
@@ -106,7 +104,7 @@ public class TaoGoiThueServlet extends HttpServlet {
         }
 
         int maMauXe, maChiNhanh;
-        float giaNgay, giaGio, phuThu, giamGia;
+        float giaNgay, giaGio, phuThu;
         try {
             maMauXe    = Integer.parseInt(maMauXeStr.trim());
             maChiNhanh = Integer.parseInt(maChiNhanhStr.trim());
@@ -114,8 +112,6 @@ public class TaoGoiThueServlet extends HttpServlet {
             giaGio     = Float.parseFloat(giaGioStr.trim());
             phuThu     = (phuThuStr != null && !phuThuStr.trim().isEmpty())
                             ? Float.parseFloat(phuThuStr.trim()) : 0f;
-            giamGia    = (giamGiaStr != null && !giamGiaStr.trim().isEmpty())
-                            ? Float.parseFloat(giamGiaStr.trim()) : 0f;
         } catch (NumberFormatException e) {
             guiPhanHoiXML(response, 400, "error", "Giá trị số không hợp lệ");
             return;
@@ -131,9 +127,6 @@ public class TaoGoiThueServlet extends HttpServlet {
         if (phuThu < 0) {
             guiPhanHoiXML(response, 400, "error", "Phụ thu không được âm"); return;
         }
-        if (giamGia < 0 || giamGia > 100) {
-            guiPhanHoiXML(response, 400, "error", "Giảm giá phải từ 0 đến 100 (%)"); return;
-        }
 
         GoiThue goiThue = new GoiThue();
         goiThue.setMaMauXe(maMauXe);
@@ -144,7 +137,6 @@ public class TaoGoiThueServlet extends HttpServlet {
         goiThue.setGiaNgay(giaNgay);
         goiThue.setGiaGio(giaGio);
         goiThue.setPhuThu(phuThu);
-        goiThue.setGiamGia(giamGia);
 
         try {
             goiThueDAO.themGoiThue(goiThue);

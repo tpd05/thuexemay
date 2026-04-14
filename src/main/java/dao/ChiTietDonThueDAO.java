@@ -14,13 +14,11 @@ import model.ChiTietDonThue;
 public class ChiTietDonThueDAO {
 	public int demXeDaThue(int maGoiThue, LocalDateTime batDau, LocalDateTime ketThuc, Connection con)
 			throws SQLException {
-
 		String SQL = "SELECT COUNT(DISTINCT ct.maXe) as daThue " +
 		             "FROM ChiTietDonThue ct " +
-		             "JOIN GoiThue gt ON ct.maGoiThue = gt.maGoiThue " +
 		             "JOIN DonThue dt ON ct.maDonThue = dt.maDonThue " +
 		             "WHERE ct.maGoiThue = ? " +
-		             "AND dt.trangThai = 'DA_THANH_TOAN' " +
+		             "AND dt.trangThai IN ('DA_THANH_TOAN', 'CHO_THANH_TOAN', 'DANG_THUE') " +
 		             "AND ct.thoiGianBatDau < ? " +
 		             "AND ct.thoiGianKetThuc > ?";
 
@@ -39,6 +37,7 @@ public class ChiTietDonThueDAO {
 
 		return 0;
 	}
+
 	public boolean themChiTiet(ChiTietDonThue ct, Connection con) throws SQLException {
 	    String SQL = "insert into ChiTietDonThue(maDonThue, maXe, maGoiThue, thoiGianBatDau, thoiGianKetThuc, donGia) values (?, ?, ?, ?, ?, ?)";
 

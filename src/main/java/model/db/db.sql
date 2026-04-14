@@ -6,7 +6,7 @@ USE thuexemay;
 
 -- 1. TaiKhoan
 CREATE TABLE TaiKhoan (
-    userID INT PRIMARY KEY,
+    userID INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) UNIQUE,
     password VARCHAR(255),
     role VARCHAR(50)
@@ -97,7 +97,6 @@ CREATE TABLE GoiThue (
     giaNgay FLOAT,
     giaGio FLOAT,
     phuThu FLOAT,
-    giamGia FLOAT,
     FOREIGN KEY (maMauXe) REFERENCES MauXe(maMauXe),
     FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac),
     FOREIGN KEY (maChiNhanh) REFERENCES ChiNhanh(maChiNhanh)

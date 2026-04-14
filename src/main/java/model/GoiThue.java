@@ -10,12 +10,11 @@ public class GoiThue {
     private float giaNgay;
     private float giaGio;
     private float phuThu;
-    private float giamGia;
     public GoiThue() {}
 
     public GoiThue(int maGoiThue, int maMauXe, int maDoiTac, int maChiNhanh,
                    String tenGoiThue, String phuKien, float giaNgay, float giaGio,
-                   float phuThu, float giamGia) {
+                   float phuThu) {
         this.maGoiThue = maGoiThue;
         this.maMauXe = maMauXe;
         this.maDoiTac = maDoiTac;
@@ -25,7 +24,6 @@ public class GoiThue {
         this.giaNgay = giaNgay;
         this.giaGio = giaGio;
         this.phuThu = phuThu;
-        this.giamGia = giamGia;
     }
 
 	public int getMaGoiThue() {
@@ -100,12 +98,4 @@ public class GoiThue {
 		this.phuThu = phuThu;
 	}
 
-
-	public float getGiamGia() {
-		return giamGia;
-	}
-
-	public void setGiamGia(float giamGia) {
-		this.giamGia = giamGia;
-	}
 }

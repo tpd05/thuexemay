@@ -119,6 +119,7 @@ public class XeMayDAO {
 				FROM XeMay xm
 				JOIN GoiThue gt ON xm.maMauXe = gt.maMauXe
 				WHERE gt.maGoiThue = ?
+				AND xm.trangThai = 'san_sang'
 				AND xm.maXe NOT IN (
 					SELECT ct.maXe
 					FROM ChiTietDonThue ct

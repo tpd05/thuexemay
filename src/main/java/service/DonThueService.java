@@ -1,21 +1,40 @@
 package service;
 
 import java.sql.Connection;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import dao.ChiNhanhDAO;
 import dao.ChiTietDonThueDAO;
 import dao.DonThueDAO;
 import dao.GioHangDAO;
+import dao.GoiThueDAO;
+import dao.MauXeDAO;
 import dao.MucHangDAO;
 import dao.XeMayDAO;
+import model.ChiNhanh;
 import model.ChiTietDonThue;
 import model.DonThue;
 import model.GioHang;
+import model.GoiThue;
+import model.MauXe;
 import model.MucHang;
+import model.XeMay;
 import util.Connect;
 
 public class DonThueService {
+	
+	// Helper method to convert LocalDateTime to java.util.Date for JSTL fmt:formatDate
+	private Date convertLocalDateTimeToDate(LocalDateTime localDateTime) {
+		if (localDateTime == null) {
+			return null;
+		}
+		return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+	}
+	
 	public DonThue taoDonThueAo(GioHang gh, List<MucHang> selected) throws Exception {
 
 		Connection con = null;
@@ -24,6 +43,9 @@ public class DonThueService {
 			con = Connect.getInstance().getConnect();
 
 			XeMayDAO xeDAO = new XeMayDAO();
+			GoiThueDAO goiThueDAO = new GoiThueDAO();
+			MauXeDAO mauXeDAO = new MauXeDAO();
+			ChiNhanhDAO chiNhanhDAO = new ChiNhanhDAO(con);
 
 			DonThue don = new DonThue();
 			don.setUserID(gh.getUserID());
@@ -38,6 +60,9 @@ public class DonThueService {
 					throw new RuntimeException("Thiếu thời gian thuê");
 				}
 
+				// Lấy thông tin gói thuê
+				GoiThue goiThue = goiThueDAO.layGoiThueTheoId(mh.getMaGoiThue(), con);
+				
 				List<Integer> xeTrong = xeDAO.layXeTrong(mh.getMaGoiThue(), mh.getThoiGianBatDau(),
 						mh.getThoiGianKetThuc(), con);
 
@@ -49,12 +74,42 @@ public class DonThueService {
 
 					ChiTietDonThue ct = new ChiTietDonThue();
 
-					ct.setMaXe(xeTrong.get(i));
+					int maXe = xeTrong.get(i);
+					ct.setMaXe(maXe);
 					ct.setMaGoiThue(mh.getMaGoiThue());
 					ct.setThoiGianBatDau(mh.getThoiGianBatDau());
 					ct.setThoiGianKetThuc(mh.getThoiGianKetThuc());
-
+					// Convert to java.util.Date for JSTL fmt:formatDate
+					ct.setThoiGianBatDauDate(convertLocalDateTimeToDate(mh.getThoiGianBatDau()));
+					ct.setThoiGianKetThucDate(convertLocalDateTimeToDate(mh.getThoiGianKetThuc()));
 					ct.setDonGia((int) mh.tinhTien());
+
+				// Lấy thông tin chi tiết xe
+					XeMay xeMay = xeDAO.timXeTheoId(maXe, con);
+					if (xeMay != null) {
+						ct.setBienSoXe(xeMay.getBienSo());
+						ct.setSoKhung(xeMay.getSoKhung());
+						ct.setSoMay(xeMay.getSoMay());
+
+						// Lấy thông tin mẫu xe
+						MauXe mauXe = mauXeDAO.layMauXeTheoId(xeMay.getMaMauXe(), con);
+						if (mauXe != null) {
+							ct.setHangXe(mauXe.getHangXe());
+							ct.setDongXe(mauXe.getDongXe());
+							ct.setUrlHinhAnh(mauXe.getUrlHinhAnh());
+						}
+
+						// Lấy thông tin chi nhánh
+						ChiNhanh chiNhanh = chiNhanhDAO.layChiNhanhTheoId(xeMay.getMaChiNhanh(), con);
+						if (chiNhanh != null) {
+							ct.setTenChiNhanh(chiNhanh.getTenChiNhanh());
+						}
+					}
+
+					// Lấy tên gói thuê
+					if (goiThue != null) {
+						ct.setTenGoiThue(goiThue.getTenGoiThue());
+					}
 
 					dsChiTiet.add(ct);
 				}

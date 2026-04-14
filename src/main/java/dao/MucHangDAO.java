@@ -34,11 +34,13 @@ public class MucHangDAO {
 	// Kiểm tra và lấy MucHang nếu đã tồn tại
 	public MucHang layMucHangByGoiThue(int maGioHang, int maGoiThue, Connection con) throws SQLException {
 		String SQL = "SELECT maGioHang, maGoiThue, soLuong, thoiGianBatDau, thoiGianKetThuc FROM muchang WHERE maGioHang = ? AND maGoiThue = ?";
+		System.out.println("[MucHangDAO.layMucHangByGoiThue] SQL: " + SQL + " | maGioHang=" + maGioHang + ", maGoiThue=" + maGoiThue);
 		try (PreparedStatement pstm = con.prepareStatement(SQL)) {
 			pstm.setInt(1, maGioHang);
 			pstm.setInt(2, maGoiThue);
 			try (ResultSet rs = pstm.executeQuery()) {
 				if (rs.next()) {
+					System.out.println("[MucHangDAO.layMucHangByGoiThue] FOUND! soLuong=" + rs.getInt("soLuong"));
 					MucHang mh = new MucHang();
 					mh.setMaGioHang(rs.getInt("maGioHang"));
 					mh.setMaGoiThue(rs.getInt("maGoiThue"));
@@ -50,8 +52,14 @@ public class MucHangDAO {
 						mh.setThoiGianKetThuc(rs.getTimestamp("thoiGianKetThuc").toLocalDateTime());
 					}
 					return mh;
+				} else {
+					System.out.println("[MucHangDAO.layMucHangByGoiThue] NOT FOUND - Will insert new MucHang");
 				}
 			}
+		} catch (SQLException e) {
+			System.out.println("[MucHangDAO.layMucHangByGoiThue] SQLException: " + e.getMessage());
+			e.printStackTrace();
+			throw e;
 		}
 		return null;
 	}

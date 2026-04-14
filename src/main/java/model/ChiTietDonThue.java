@@ -1,6 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 public class ChiTietDonThue {
 	private int maChiTiet;
@@ -11,6 +12,20 @@ public class ChiTietDonThue {
     private LocalDateTime thoiGianKetThuc;
     private LocalDateTime thoiGianTra;
     private int donGia;
+    
+    // Date versions for JSTL fmt:formatDate compatibility
+    private Date thoiGianBatDauDate;
+    private Date thoiGianKetThucDate;
+    
+    // Chi tiết mở rộng để hiển thị trên trang thanh toán
+    private String tenGoiThue;
+    private String tenChiNhanh;
+    private String bienSoXe;
+    private String soKhung;
+    private String soMay;
+    private String hangXe;
+    private String dongXe;
+    private String urlHinhAnh;
 
     public ChiTietDonThue() {}
 
@@ -89,6 +104,86 @@ public class ChiTietDonThue {
 
 	public void setDonGia(int donGia) {
 		this.donGia = donGia;
+	}
+
+	public String getTenGoiThue() {
+		return tenGoiThue;
+	}
+
+	public void setTenGoiThue(String tenGoiThue) {
+		this.tenGoiThue = tenGoiThue;
+	}
+
+	public String getTenChiNhanh() {
+		return tenChiNhanh;
+	}
+
+	public void setTenChiNhanh(String tenChiNhanh) {
+		this.tenChiNhanh = tenChiNhanh;
+	}
+
+	public String getBienSoXe() {
+		return bienSoXe;
+	}
+
+	public void setBienSoXe(String bienSoXe) {
+		this.bienSoXe = bienSoXe;
+	}
+
+	public String getSoKhung() {
+		return soKhung;
+	}
+
+	public void setSoKhung(String soKhung) {
+		this.soKhung = soKhung;
+	}
+
+	public String getSoMay() {
+		return soMay;
+	}
+
+	public void setSoMay(String soMay) {
+		this.soMay = soMay;
+	}
+
+	public String getHangXe() {
+		return hangXe;
+	}
+
+	public void setHangXe(String hangXe) {
+		this.hangXe = hangXe;
+	}
+
+	public String getDongXe() {
+		return dongXe;
+	}
+
+	public void setDongXe(String dongXe) {
+		this.dongXe = dongXe;
+	}
+
+	public String getUrlHinhAnh() {
+		return urlHinhAnh;
+	}
+
+	public void setUrlHinhAnh(String urlHinhAnh) {
+		this.urlHinhAnh = urlHinhAnh;
+	}
+
+	public Date getThoiGianBatDauDate() {
+		return thoiGianBatDauDate;
+	}
+
+	public void setThoiGianBatDauDate(Date thoiGianBatDauDate) {
+		this.thoiGianBatDauDate = thoiGianBatDauDate;
+	}
+
+	public Date getThoiGianKetThucDate() {
+		return thoiGianKetThucDate;
+	}
+
+	public void setThoiGianKetThucDate(Date thoiGianKetThucDate) {
+		this.thoiGianKetThucDate = thoiGianKetThucDate;
 	}
     
 }

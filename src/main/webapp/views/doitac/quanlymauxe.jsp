@@ -1,184 +1,374 @@
-<%@ page contentType="text/html;charset=UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="dao.ChiNhanhDAO,dao.MauXeDAO,model.ChiNhanh,model.MauXe,java.util.List,java.net.URLEncoder" %>
+<%!
+    private String esc(String s) {
+        if (s == null) return "";
+        return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;");
+    }
+%>
 <%
-String ctxPath = request.getContextPath();
-String username = (String) session.getAttribute("username");
-String role = (String) session.getAttribute("role");
+    request.setCharacterEncoding("UTF-8");
+    javax.servlet.http.HttpSession sess = request.getSession(false);
+    if (sess == null || !"DOI_TAC".equals(sess.getAttribute("role"))) {
+        response.sendRedirect(request.getContextPath() + "/dangnhap"); return;
+    }
+    int maDoiTac = (Integer) sess.getAttribute("maDoiTac");
+    String ctx   = request.getContextPath();
 
-if (username == null || role == null || !role.equals("DOI_TAC")) {
-    response.sendRedirect(ctxPath + "/views/403.jsp");
-    return;
-}
+    String msg           = request.getParameter("msg");
+    String msgType       = request.getParameter("msgType");
+    String maChiNhanhStr = request.getParameter("maChiNhanh");
+    int maChiNhanh = 0;
+    if (maChiNhanhStr != null && !maChiNhanhStr.trim().isEmpty()) {
+        try { maChiNhanh = Integer.parseInt(maChiNhanhStr.trim()); } catch (NumberFormatException ignore) {}
+    }
+    List<ChiNhanh> danhSachCN = new ChiNhanhDAO().layToanBoChiNhanh(maDoiTac);
+    List<MauXe>    danhSachMX = (maChiNhanh > 0) ? new MauXeDAO().layDanhSachMauXeTheoChiNhanh(maChiNhanh, maDoiTac) : null;
+    String tenChiNhanh = "";
+    for (ChiNhanh cn : danhSachCN) { if (cn.getMaChiNhanh() == maChiNhanh) { tenChiNhanh = cn.getTenChiNhanh(); break; } }
+    int currentStep = (maChiNhanh > 0) ? 2 : 1;
 %>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Quan Ly Mau Xe</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Mẫu Xe - Đối Tác</title>
+    <link href="${pageContext.request.contextPath}/dist/tailwind.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/css/globals.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/css/components.css" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+    <style>
+        /* Page-specific styles */
+        .form-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: var(--spacing-2xl);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        
+        .form-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .branch-card {
+            position: relative;
+            padding: var(--spacing-lg);
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .branch-card:hover {
+            background: #ffffff;
+            box-shadow: inset 0 0 0 2px #10b981;
+        }
+
+        .branch-card input[type="radio"] {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            accent-color: #10b981;
+            cursor: pointer;
+        }
+
+        .branch-name {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: var(--spacing-sm);
+            padding-right: 28px;
+            color: var(--color-text-primary);
+        }
+
+        .branch-address {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .table-row:hover {
+            background: rgba(16, 185, 129, 0.02);
+        }
+
+        .alert-message {
+            padding: var(--spacing-md) var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .alert-message.alert-error {
+            border-left: 4px solid #dc2626;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .alert-message.alert-success {
+            border-left: 4px solid #10b981;
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .submit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+    </style>
 </head>
-<body>
+<body class="bg-color-bg-primary text-color-text-primary font-body">
+    <div class="page-wrapper">
+        <header class="page-header">
+            <jsp:include page="/components/navbar.jsp" />
+        </header>
 
-<h1>Quan Ly Mau Xe</h1>
+        <main class="page-main">
+            <section class="app-container">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--spacing-3xl); margin-bottom: var(--spacing-3xl);">
+                    <h1 style="font-size: var(--text-3xl); font-weight: 700; margin: 0;">Quản Lý Mẫu Xe</h1>
+                </div>
 
-<p><a href="<%=ctxPath%>/doitac/dashboard">← Quay lai Dashboard</a></p>
+                <% if (msg != null && !msg.isEmpty()) { %>
+                    <div class="alert-message alert-<%= "error".equals(msgType) ? "error" : "success" %>">
+                        <%= esc(msg) %>
+                    </div>
+                <% } %>
 
-<h2>Danh Sach Mau Xe</h2>
+                <% if (currentStep == 1) { %>
+                    <!-- Step 1: Choose Branch -->
+                    <div class="form-card" style="margin-bottom: var(--spacing-3xl);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--spacing-lg); color: var(--color-text-primary); padding-bottom: var(--spacing-md); border-bottom: 2px solid #e5e7eb;">
+                            <iconify-icon icon="mdi:store" width="24" height="24" style="color: #10b981;"></iconify-icon>
+                            <span>Chọn Chi Nhánh</span>
+                        </div>
 
-<div>
-    <label>Loc theo Chi Nhanh:</label>
-    <select id="filterChiNhanh">
-        <option value="">-- Tat Ca Chi Nhanh --</option>
-    </select>
-</div>
+                        <% if (danhSachCN.isEmpty()) { %>
+                            <div style="text-align: center; padding: var(--spacing-3xl); color: #6b7280; font-size: 14px;">
+                                <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
+                                Chưa có chi nhánh nào. <a href="<%= ctx %>/doitac/quanlychinhanh" style="color: #10b981; text-decoration: none; font-weight: 600;">Thêm chi nhánh trước</a>.
+                            </div>
+                        <% } else { %>
+                            <form method="get" action="<%= ctx %>/doitac/quanlymauxe">
+                                <div class="branch-grid" style="margin-bottom: var(--spacing-lg);">
+                                    <% for (ChiNhanh cn : danhSachCN) { %>
+                                        <label class="branch-card">
+                                            <input type="radio" name="maChiNhanh" value="<%= cn.getMaChiNhanh() %>" required />
+                                            <div class="branch-name"><%= esc(cn.getTenChiNhanh()) %></div>
+                                            <div class="branch-address"><%= esc(cn.getDiaDiem()) %></div>
+                                        </label>
+                                    <% } %>
+                                </div>
+                                <button type="submit" style="background: #10b981; color: white; padding: var(--spacing-sm) var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                    <iconify-icon icon="mdi:arrow-right" width="14" height="14"></iconify-icon>
+                                    Xem Mẫu Xe
+                                </button>
+                            </form>
+                        <% } %>
+                    </div>
 
-<div id="mauXeList">
-    <p>Dang tai...</p>
-</div>
+                <% } else { %>
+                    <!-- Step 2: Manage Models -->
+                    <div style="display: grid; grid-template-columns: 360px 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-3xl);">
+                        <!-- Left Panel: Add New Model -->
+                        <div class="form-card">
+                            <div style="display: flex; align-items: center; gap: var(--spacing-md); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--spacing-lg); color: var(--color-text-primary); padding-bottom: var(--spacing-md); border-bottom: 2px solid #e5e7eb;">
+                                <iconify-icon icon="mdi:plus-circle" width="24" height="24" style="color: #10b981;"></iconify-icon>
+                                <span>Thêm Mẫu Xe</span>
+                            </div>
 
-<hr>
+                            <form method="post" action="<%= ctx %>/doitac/themMauXe" enctype="multipart/form-data">
+                                <input type="hidden" name="maChiNhanh" value="<%= maChiNhanh %>" />
+                                
+                                <div style="margin-bottom: var(--spacing-lg);">
+                                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Hãng Xe *</label>
+                                    <input type="text" name="hangXe" placeholder="Honda, Yamaha..." maxlength="100" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                </div>
 
-<h2>Them Mau Xe Moi</h2>
+                                <div style="margin-bottom: var(--spacing-lg);">
+                                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Dòng Xe *</label>
+                                    <input type="text" name="dongXe" placeholder="Wave, Exciter..." maxlength="100" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                </div>
 
-<form id="formThemMauXe">
-    <div>
-        <label>Chi Nhanh:</label>
-        <select name="maChiNhanh" id="maChiNhanhForm" required>
-            <option value="">-- Chon Chi Nhanh --</option>
-        </select>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Đời Xe *</label>
+                                        <input type="number" name="doiXe" placeholder="2022" min="1900" max="2100" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Dung Tích (cc) *</label>
+                                        <input type="number" name="dungTich" placeholder="125" step="0.1" min="0.1" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: var(--spacing-lg);">
+                                    <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Hình Ảnh (Tùy Chọn)</label>
+                                    <input type="file" id="hinhAnhInput" name="hinhAnh" accept="image/*" style="width: 100%; padding: var(--spacing-md); border: 2px dashed #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 13px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease; cursor: pointer;" />
+                                    <div id="filePreviewContainer" style="margin-top: var(--spacing-md); display: none;">
+                                        <div style="font-size: 12px; color: #6b7280; margin-bottom: var(--spacing-sm);">
+                                            📁 Tệp đã chọn: <span id="fileNameDisplay" style="font-weight: 600; color: var(--color-text-primary);"></span>
+                                            <span id="clearFileBtn" style="margin-left: var(--spacing-md); color: #dc2626; cursor: pointer; font-weight: 600;">[Xóa]</span>
+                                        </div>
+                                        <div style="width: 100%; max-width: 250px; height: 150px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                            <img id="imagePreview" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                                    <button type="submit" style="background: #10b981; color: white; padding: var(--spacing-sm) var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                        <iconify-icon icon="mdi:plus" width="14" height="14"></iconify-icon>
+                                        Thêm Mẫu Xe
+                                    </button>
+                                    <a href="<%= ctx %>/doitac/quanlymauxe" style="background: #f9fafb; color: var(--color-text-primary); padding: var(--spacing-sm) var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                        <iconify-icon icon="mdi:arrow-left" width="14" height="14"></iconify-icon>
+                                        Đổi Chi Nhánh
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right Panel: Models List -->
+                        <div style="background: white; border-radius: 12px; padding: var(--spacing-lg); border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg); padding-bottom: var(--spacing-lg); border-bottom: 1px solid #e5e7eb;">
+                                <h2 style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin: 0;">Danh Sách Mẫu Xe</h2>
+                            </div>
+
+                            <div style="overflow-x: auto;">
+                                <% if (danhSachMX == null || danhSachMX.isEmpty()) { %>
+                                    <div style="text-align: center; padding: var(--spacing-3xl); color: #6b7280; font-size: 14px;">
+                                        <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
+                                        Chưa có mẫu xe nào tại chi nhánh này.
+                                    </div>
+                                <% } else { %>
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="background: #f9fafb;">
+                                                <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 50px;">#</th>
+                                                <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 120px;">Hình Ảnh</th>
+                                                <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Hãng Xe</th>
+                                                <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Dòng Xe</th>
+                                                <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Đời Xe</th>
+                                                <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Dung Tích</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% int stt = 1; for (MauXe mx : danhSachMX) { %>
+                                                <tr class="table-row" style="border-bottom: 1px solid #e5e7eb;">
+                                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><span style="display: inline-block; padding: var(--spacing-xs) var(--spacing-md); background: #10b981; color: white; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;"><%= stt++ %></span></td>
+                                                    <td style="padding: var(--spacing-md) var(--spacing-lg); text-align: center;">
+                                                        <% if (mx.getUrlHinhAnh() != null && !mx.getUrlHinhAnh().isEmpty()) { %>
+                                                            <div style="width: 100px; height: 80px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
+                                                                <img src="<%= ctx %><%= mx.getUrlHinhAnh() %>" alt="<%= esc(mx.getHangXe()) %>" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                                                            </div>
+                                                        <% } else { %>
+                                                            <div style="width: 100px; height: 80px; background: #f9fafb; border: 1px dashed #e5e7eb; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                                                                <span style="font-size: 11px; color: #9ca3af;">Không có ảnh</span>
+                                                            </div>
+                                                        <% } %>
+                                                    </td>
+                                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><strong><%= esc(mx.getHangXe()) %></strong></td>
+                                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;"><%= esc(mx.getDongXe()) %></td>
+                                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;"><%= mx.getDoiXe() %></td>
+                                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;"><%= mx.getDungTich() %> cc</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <jsp:include page="/components/footer.jsp" />
+        </footer>
     </div>
-    <br>
-    <div>
-        <label>Hang Xe:</label>
-        <input type="text" name="hangXe" required>
-    </div>
-    <br>
-    <div>
-        <label>Dong Xe:</label>
-        <input type="text" name="dongXe" required>
-    </div>
-    <br>
-    <div>
-        <label>Doi Xe:</label>
-        <input type="text" name="doiXe" required>
-    </div>
-    <br>
-    <div>
-        <label>Dung Tich (cc):</label>
-        <input type="number" name="dungTich" required>
-    </div>
-    <br>
-    <div>
-        <label>URL Hinh Anh:</label>
-        <input type="text" name="urlHinhAnh">
-    </div>
-    <br>
-    <button type="submit">Them Mau Xe</button>
-</form>
-
+</body>
+<script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <script>
-const ctx = '<%=ctxPath%>';
+    // File preview functionality
+    const fileInput = document.getElementById('hinhAnhInput');
+    const previewContainer = document.getElementById('filePreviewContainer');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const imagePreview = document.getElementById('imagePreview');
+    const clearFileBtn = document.getElementById('clearFileBtn');
 
-// Load danh sach chi nhanh
-function loadChiNhanh() {
-    fetch(ctx + '/doitac/quanlychinhanh?api=1')
-        .then(res => res.text())
-        .then(xml => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(xml, 'application/xml');
-            
-            const selectFilter = document.getElementById('filterChiNhanh');
-            const selectForm = document.getElementById('maChiNhanhForm');
-            
-            doc.querySelectorAll('chiNhanh').forEach(cn => {
-                const maChiNhanh = cn.querySelector('maChiNhanh').textContent;
-                const tenChiNhanh = cn.querySelector('tenChiNhanh').textContent;
-                
-                const optionFilter = document.createElement('option');
-                optionFilter.value = maChiNhanh;
-                optionFilter.text = tenChiNhanh;
-                selectFilter.appendChild(optionFilter);
-                
-                const optionForm = document.createElement('option');
-                optionForm.value = maChiNhanh;
-                optionForm.text = tenChiNhanh;
-                selectForm.appendChild(optionForm);
-            });
-        })
-        .catch(e => console.error('Loi load chi nhanh:', e));
-}
-
-// Load danh sach mau xe
-function loadMauXe(maChiNhanh = '') {
-    let url = ctx + '/doitac/quanlymauxe?api=1';
-    if (maChiNhanh) {
-        url += '&maChiNhanh=' + maChiNhanh;
-    }
-    
-    fetch(url)
-        .then(res => res.text())
-        .then(xml => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(xml, 'application/xml');
-            let html = '<table border="1" cellpadding="5">';
-            html += '<tr><th>Hang Xe</th><th>Dong Xe</th><th>Doi Xe</th><th>Dung Tich</th></tr>';
-            doc.querySelectorAll('mauXe').forEach(mx => {
-                html += '<tr>';
-                html += '<td>' + mx.querySelector('hangXe').textContent + '</td>';
-                html += '<td>' + mx.querySelector('dongXe').textContent + '</td>';
-                html += '<td>' + mx.querySelector('doiXe').textContent + '</td>';
-                html += '<td>' + mx.querySelector('dungTich').textContent + ' cc</td>';
-                html += '</tr>';
-            });
-            html += '</table>';
-            
-            if (doc.querySelectorAll('mauXe').length === 0) {
-                html = '<p>Khong co mau xe nao.</p>';
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Kích thước file không được vượt quá 5MB');
+                this.value = '';
+                previewContainer.style.display = 'none';
+                return;
             }
             
-            document.getElementById('mauXeList').innerHTML = html;
-        })
-        .catch(e => {
-            document.getElementById('mauXeList').innerHTML = '<p style="color: red;">Loi load danh sach: ' + e.message + '</p>';
-        });
-}
-
-// Load khi trang load
-loadChiNhanh();
-loadMauXe();
-
-// Loc khi chon chi nhanh
-document.getElementById('filterChiNhanh').onchange = function() {
-    loadMauXe(this.value);
-};
-
-// Submit form them mau xe
-document.getElementById('formThemMauXe').onsubmit = async function(e) {
-    e.preventDefault();
-    const btn = this.querySelector('button');
-    btn.disabled = true;
-
-    try {
-        const res = await fetch(ctx + '/doitac/quanlymauxe', {
-            method: 'POST',
-            body: new URLSearchParams(new FormData(this))
-        });
-
-        const xml = new DOMParser().parseFromString(await res.text(), 'application/xml');
-        const status = xml.querySelector('status').textContent;
-        const message = xml.querySelector('message').textContent;
-
-        alert(message);
-
-        if (status === 'success') {
-            this.reset();
-            loadMauXe(document.getElementById('filterChiNhanh').value);
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('Vui lòng chọn file ảnh (JPEG, PNG, GIF, WebP...)');
+                this.value = '';
+                previewContainer.style.display = 'none';
+                return;
+            }
+            
+            fileNameDisplay.textContent = file.name;
+            previewContainer.style.display = 'block';
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imagePreview.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         }
-    } catch (error) {
-        alert('Loi: ' + error.message);
-    } finally {
-        btn.disabled = false;
-    }
-};
-</script>
+    });
 
-</body>
+    clearFileBtn.addEventListener('click', function() {
+        fileInput.value = '';
+        previewContainer.style.display = 'none';
+    });
+
+    // Drag and drop
+    fileInput.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#10b981';
+        this.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+    });
+
+    fileInput.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#e5e7eb';
+        this.style.backgroundColor = '#f9fafb';
+    });
+
+    fileInput.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.style.borderColor = '#e5e7eb';
+        this.style.backgroundColor = '#f9fafb';
+        
+        if (e.dataTransfer.files.length > 0) {
+            this.files = e.dataTransfer.files;
+            const event = new Event('change', { bubbles: true });
+            this.dispatchEvent(event);
+        }
+    });
+</script>
 </html>

@@ -80,4 +80,24 @@ public class ChiNhanhDAO {
 		System.out.println("DEBUG DAO: Total ChiNhanhs found = " + list.size());
 		return list;
 	}
+	
+	public ChiNhanh layChiNhanhTheoId(int maChiNhanh, Connection con) {
+		String sql = "select * from ChiNhanh where maChiNhanh = ?";
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
+			ps.setInt(1, maChiNhanh);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					ChiNhanh cn = new ChiNhanh();
+					cn.setMaChiNhanh(rs.getInt("maChiNhanh"));
+					cn.setMaDoiTac(rs.getInt("maDoiTac"));
+					cn.setTenChiNhanh(rs.getString("tenChiNhanh"));
+					cn.setDiaDiem(rs.getString("diaDiem"));
+					return cn;
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 }

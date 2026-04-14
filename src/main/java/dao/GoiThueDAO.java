@@ -12,6 +12,7 @@ import java.util.Map;
 import model.GoiThue;
 import util.Connect;
 
+
 public class GoiThueDAO {
 	 private Connection con;
 
@@ -25,8 +26,8 @@ public class GoiThueDAO {
 
 	    // FIX: throws SQLException thay vì nuốt lỗi
 	    public void themGoiThue(GoiThue goiThue) throws SQLException {
-	        String sql = "insert into GoiThue (maMauXe, maDoiTac, maChiNhanh, tenGoiThue, phuKien, giaNgay, giaGio, phuThu, giamGia) " +
-	                     "values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	        String sql = "insert into GoiThue (maMauXe, maDoiTac, maChiNhanh, tenGoiThue, phuKien, giaNgay, giaGio, phuThu) " +
+	                     "values (?, ?, ?, ?, ?, ?, ?, ?)";
 	        try (PreparedStatement ps = con.prepareStatement(sql)) {
 	            ps.setInt(1, goiThue.getMaMauXe());
 	            ps.setInt(2, goiThue.getMaDoiTac());
@@ -36,7 +37,6 @@ public class GoiThueDAO {
 	            ps.setFloat(6, goiThue.getGiaNgay());
 	            ps.setFloat(7, goiThue.getGiaGio());
 	            ps.setFloat(8, goiThue.getPhuThu());
-	            ps.setFloat(9, goiThue.getGiamGia());
 	            ps.executeUpdate();
 	        }
 	    }
@@ -91,7 +91,7 @@ public class GoiThueDAO {
 	                    gt.setGiaNgay(rs.getFloat("giaNgay"));
 	                    gt.setGiaGio(rs.getFloat("giaGio"));
 	                    gt.setPhuThu(rs.getFloat("phuThu"));
-	                    gt.setGiamGia(rs.getFloat("giamGia"));
+
 	                    list.add(gt);
 	                }
 	            }
@@ -106,9 +106,8 @@ public class GoiThueDAO {
 
 	        String sql =
 	            "SELECT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.tenGoiThue, " +
-	            "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu, gt.giamGia " +
-	            "FROM GoiThue gt " +
-	            "WHERE gt.maDoiTac = ? " +
+            "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
+	            "FROM GoiThue gt WHERE gt.maDoiTac = ? " +
 	            "ORDER BY gt.maGoiThue DESC";
 
 	        try (Connection con = Connect.getInstance().getConnect();
@@ -128,7 +127,7 @@ public class GoiThueDAO {
 	                gt.setGiaNgay(rs.getFloat("giaNgay"));
 	                gt.setGiaGio(rs.getFloat("giaGio"));
 	                gt.setPhuThu(rs.getFloat("phuThu"));
-	                gt.setGiamGia(rs.getFloat("giamGia"));
+
 
 	                list.add(gt);
 	            }
@@ -182,7 +181,7 @@ public class GoiThueDAO {
 	            g.setGiaNgay(rs.getFloat("giaNgay"));
 	            g.setGiaGio(rs.getFloat("giaGio"));
 	            g.setPhuThu(rs.getFloat("phuThu"));
-	            g.setGiamGia(rs.getFloat("giamGia"));
+
 
 	            map.put(g.getMaGoiThue(), g);
 	        }
@@ -191,12 +190,15 @@ public class GoiThueDAO {
 	    return map;
 	}
 	public int demTongXe(int maGoiThue, Connection con) throws SQLException{
+		// Đếm tổng số xe SẴN SÀNG (san_sang) thuộc GoiThue (phục vụ cho availability check)
+		// Điều kiện: maMauXe, maChiNhanh, maDoiTac đều phải khớp, và xe phải ở trạng thái san_sang
 		String SQL = "SELECT COUNT(DISTINCT xm.maXe) as tongXe " +
 		             "FROM XeMay xm " +
 		             "JOIN GoiThue gt ON xm.maMauXe = gt.maMauXe " +
 		             "WHERE gt.maGoiThue = ? " +
-		             "AND xm.maChiNhanh = gt.maChiNhanh";
-
+		             "AND xm.maChiNhanh = gt.maChiNhanh " +
+		             "AND xm.maDoiTac = gt.maDoiTac " +
+		             "AND xm.trangThai = 'san_sang'";
 		try(PreparedStatement pstm = con.prepareStatement(SQL)){
 			pstm.setInt(1, maGoiThue);
 			try(ResultSet rs = pstm.executeQuery()){
@@ -214,7 +216,7 @@ public class GoiThueDAO {
 		public List<GoiThue> layTatCaGoiThue(Connection con) throws SQLException {
 			List<GoiThue> list = new ArrayList<>();
 			String sql = "SELECT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.maDoiTac, gt.tenGoiThue, " +
-						 "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu, gt.giamGia " +
+						 "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
 						 "FROM GoiThue gt " +
 						 "ORDER BY gt.maGoiThue DESC";
 			try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -230,7 +232,7 @@ public class GoiThueDAO {
 					gt.setGiaNgay(rs.getFloat("giaNgay"));
 					gt.setGiaGio(rs.getFloat("giaGio"));
 					gt.setPhuThu(rs.getFloat("phuThu"));
-					gt.setGiamGia(rs.getFloat("giamGia"));
+
 					list.add(gt);
 				}
 			}
@@ -240,7 +242,7 @@ public class GoiThueDAO {
 		// Lấy gói thuê theo ID
 		public GoiThue layGoiThueTheoId(int maGoiThue, Connection con) throws SQLException {
 			String sql = "SELECT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.maDoiTac, gt.tenGoiThue, " +
-						 "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu, gt.giamGia " +
+						 "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
 						 "FROM GoiThue gt " +
 						 "WHERE gt.maGoiThue = ?";
 			try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -257,11 +259,131 @@ public class GoiThueDAO {
 						gt.setGiaNgay(rs.getFloat("giaNgay"));
 						gt.setGiaGio(rs.getFloat("giaGio"));
 						gt.setPhuThu(rs.getFloat("phuThu"));
-						gt.setGiamGia(rs.getFloat("giamGia"));
+
 						return gt;
 					}
 				}
 			}
 			return null;
+		}
+
+		// Filter Method 1: Get price statistics (min/max for day & hour rates)
+		public Map<String, Object> getPriceStats(Connection con) throws SQLException {
+			Map<String, Object> stats = new HashMap<>();
+			String sql = "SELECT MIN(giaNgay) as minNgay, MAX(giaNgay) as maxNgay, " +
+						 "       MIN(giaGio) as minGio, MAX(giaGio) as maxGio " +
+						 "FROM GoiThue";
+			try (PreparedStatement ps = con.prepareStatement(sql);
+				 ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					stats.put("minNgay", rs.getFloat("minNgay"));
+					stats.put("maxNgay", rs.getFloat("maxNgay"));
+					stats.put("minGio", rs.getFloat("minGio"));
+					stats.put("maxGio", rs.getFloat("maxGio"));
+				}
+			}
+			return stats;
+		}
+
+		// Filter Method 2b: Get ChiNhanh IDs by diaDiem (complete address string)
+		// Format: "Xã/Phường, Tỉnh"
+		public List<Integer> layChiNhanhIdsByDiaDiem(String diaDiem, Connection con) throws SQLException {
+			List<Integer> chiNhanhIds = new ArrayList<>();
+			// Search for matches in diaDiem field (should contain "xã, tỉnh" substring)
+			String sql = "SELECT DISTINCT maChiNhanh FROM ChiNhanh WHERE diaDiem LIKE ?";
+			try (PreparedStatement ps = con.prepareStatement(sql)) {
+				// Search for diaDiem containing the filter string
+				ps.setString(1, "%" + diaDiem + "%");
+				try (ResultSet rs = ps.executeQuery()) {
+					while (rs.next()) {
+						chiNhanhIds.add(rs.getInt("maChiNhanh"));
+					}
+				}
+			}
+			return chiNhanhIds;
+		}
+
+		// Filter Method 2: Get ChiNhanh IDs by location (province + ward)
+		public List<Integer> layChiNhanhIdsByLocation(String xaName, String tinhName, Connection con) throws SQLException {
+			List<Integer> chiNhanhIds = new ArrayList<>();
+			String sql = "SELECT DISTINCT maChiNhanh FROM ChiNhanh " +
+						 "WHERE diaDiem LIKE ? AND diaDiem LIKE ?";
+			try (PreparedStatement ps = con.prepareStatement(sql)) {
+				ps.setString(1, "%" + xaName + "%");
+				ps.setString(2, "%" + tinhName + "%");
+				try (ResultSet rs = ps.executeQuery()) {
+					while (rs.next()) {
+						chiNhanhIds.add(rs.getInt("maChiNhanh"));
+					}
+				}
+			}
+			return chiNhanhIds;
+		}
+
+		// Filter Method 3: Filter GoiThue by location + price range
+		public List<GoiThue> layGoiThueByLocationAndPrice(List<Integer> chiNhanhIds, String priceType,
+														   Float minPrice, Float maxPrice, Connection con) throws SQLException {
+			List<GoiThue> list = new ArrayList<>();
+			StringBuilder sql = new StringBuilder(
+				"SELECT DISTINCT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.maDoiTac, gt.tenGoiThue, " +
+				"       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
+				"FROM GoiThue gt " +
+				"WHERE 1=1"
+			);
+
+			// Add location filter if chi nhánh IDs provided
+			if (chiNhanhIds != null && !chiNhanhIds.isEmpty()) {
+				sql.append(" AND gt.maChiNhanh IN (");
+				for (int i = 0; i < chiNhanhIds.size(); i++) {
+					if (i > 0) sql.append(",");
+					sql.append("?");
+				}
+				sql.append(")");
+			}
+
+			// Add price filter
+			if (priceType != null && !priceType.isEmpty() && minPrice != null && maxPrice != null) {
+				if ("day".equals(priceType)) {
+					sql.append(" AND gt.giaNgay BETWEEN ? AND ?");
+				} else if ("hour".equals(priceType)) {
+					sql.append(" AND gt.giaGio BETWEEN ? AND ?");
+				}
+			}
+
+			sql.append(" ORDER BY gt.tenGoiThue ASC");
+
+			try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
+				int paramIndex = 1;
+
+				// Set chi nhánh IDs
+				if (chiNhanhIds != null && !chiNhanhIds.isEmpty()) {
+					for (int id : chiNhanhIds) {
+						ps.setInt(paramIndex++, id);
+					}
+				}
+
+				// Set price range
+				if (priceType != null && !priceType.isEmpty() && minPrice != null && maxPrice != null) {
+					ps.setFloat(paramIndex++, minPrice);
+					ps.setFloat(paramIndex++, maxPrice);
+				}
+
+				try (ResultSet rs = ps.executeQuery()) {
+					while (rs.next()) {
+						GoiThue gt = new GoiThue();
+						gt.setMaGoiThue(rs.getInt("maGoiThue"));
+						gt.setMaMauXe(rs.getInt("maMauXe"));
+						gt.setMaChiNhanh(rs.getInt("maChiNhanh"));
+						gt.setMaDoiTac(rs.getInt("maDoiTac"));
+						gt.setTenGoiThue(rs.getString("tenGoiThue"));
+						gt.setPhuKien(rs.getString("phuKien"));
+						gt.setGiaNgay(rs.getFloat("giaNgay"));
+						gt.setGiaGio(rs.getFloat("giaGio"));
+						gt.setPhuThu(rs.getFloat("phuThu"));
+						list.add(gt);
+					}
+				}
+			}
+			return list;
 		}
 }

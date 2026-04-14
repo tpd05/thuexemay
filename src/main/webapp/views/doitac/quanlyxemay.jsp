@@ -1,220 +1,494 @@
-<%@ page contentType="text/html;charset=UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="dao.ChiNhanhDAO,dao.MauXeDAO,dao.XeMayDAO,model.ChiNhanh,model.MauXe,model.XeMay,java.util.List,java.net.URLEncoder" %>
+<%!
+    private String esc(String s) {
+        if (s == null) return "";
+        return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;");
+    }
+    private String fmt(String s){ return s == null ? "" : s; }
+%>
 <%
-String ctxPath = request.getContextPath();
-String username = (String) session.getAttribute("username");
-String role = (String) session.getAttribute("role");
+    request.setCharacterEncoding("UTF-8");
+    javax.servlet.http.HttpSession sess = request.getSession(false);
+    if (sess == null || !"DOI_TAC".equals(sess.getAttribute("role"))) {
+        response.sendRedirect(request.getContextPath() + "/dangnhap"); return;
+    }
+    int maDoiTac = (Integer) sess.getAttribute("maDoiTac");
+    String ctx   = request.getContextPath();
 
-if (username == null || role == null || !role.equals("DOI_TAC")) {
-    response.sendRedirect(ctxPath + "/views/403.jsp");
-    return;
-}
+    if ("POST".equals(request.getMethod())) {
+        String maChiNhanhStr = request.getParameter("maChiNhanh");
+        String maMauXeStr    = request.getParameter("maMauXe");
+        String bienSo        = request.getParameter("bienSo");
+        String soKhung       = request.getParameter("soKhung");
+        String soMay         = request.getParameter("soMay");
+        String trangThai     = request.getParameter("trangThai");
+        String base          = ctx + "/doitac/quanlyxemay?maChiNhanh=" + fmt(maChiNhanhStr) + "&maMauXe=" + fmt(maMauXeStr);
+        if (bienSo == null || bienSo.trim().isEmpty()) {
+            response.sendRedirect(base + "&msgType=error&msg=" + URLEncoder.encode("Biển số không được để trống","UTF-8")); return;
+        }
+        if (!bienSo.trim().toUpperCase().matches("^[0-9]{2}[A-Z][0-9A-Z]-[0-9]{4,5}$")) {
+            response.sendRedirect(base + "&msgType=error&msg=" + URLEncoder.encode("Biển số sai định dạng (VD: 20A1-12345)","UTF-8")); return;
+        }
+        if (soKhung == null || soKhung.trim().isEmpty()) {
+            response.sendRedirect(base + "&msgType=error&msg=" + URLEncoder.encode("Số khung không được để trống","UTF-8")); return;
+        }
+        if (soMay == null || soMay.trim().isEmpty()) {
+            response.sendRedirect(base + "&msgType=error&msg=" + URLEncoder.encode("Số máy không được để trống","UTF-8")); return;
+        }
+        try {
+            int maCN = Integer.parseInt(maChiNhanhStr.trim());
+            int maMX = Integer.parseInt(maMauXeStr.trim());
+            XeMay xm = new XeMay();
+            xm.setMaDoiTac(maDoiTac);
+            xm.setMaChiNhanh(maCN);
+            xm.setMaMauXe(maMX);
+            xm.setBienSo(bienSo.trim().toUpperCase());
+            xm.setSoKhung(soKhung.trim().toUpperCase());
+            xm.setSoMay(soMay.trim().toUpperCase());
+            xm.setTrangThai(trangThai != null && !trangThai.trim().isEmpty() ? trangThai.trim() : "san_sang");
+            new XeMayDAO().themXeMay(xm);
+            response.sendRedirect(base + "&msgType=success&msg=" + URLEncoder.encode("Thêm xe máy thành công!","UTF-8"));
+        } catch (IllegalArgumentException e) {
+            response.sendRedirect(base + "&msgType=error&msg=" + URLEncoder.encode(e.getMessage(),"UTF-8"));
+        } catch (Exception e) {
+            response.sendRedirect(base + "&msgType=error&msg=" + URLEncoder.encode("Lỗi hệ thống: " + e.getMessage(),"UTF-8"));
+        }
+        return;
+    }
+
+    String msg           = request.getParameter("msg");
+    String msgType       = request.getParameter("msgType");
+    String maChiNhanhStr = request.getParameter("maChiNhanh");
+    String maMauXeStr    = request.getParameter("maMauXe");
+    int maChiNhanh = 0, maMauXe = 0;
+    try { if (maChiNhanhStr != null) maChiNhanh = Integer.parseInt(maChiNhanhStr.trim()); } catch (Exception ignore) {}
+    try { if (maMauXeStr != null)    maMauXe    = Integer.parseInt(maMauXeStr.trim()); }    catch (Exception ignore) {}
+    int currentStep = (maChiNhanh > 0 && maMauXe > 0) ? 3 : (maChiNhanh > 0 ? 2 : 1);
+    List<ChiNhanh> danhSachCN = new ChiNhanhDAO().layToanBoChiNhanh(maDoiTac);
+    List<MauXe>    danhSachMX = (currentStep >= 2) ? new MauXeDAO().layDanhSachMauXeTheoChiNhanh(maChiNhanh, maDoiTac) : null;
+    List<XeMay>    danhSachXE = (currentStep == 3) ? new XeMayDAO().layDanhSachXeMayTheoChiNhanh(maChiNhanh, maDoiTac) : null;
+    String tenCN = "", tenMX = "";
+    for (ChiNhanh cn : danhSachCN) if (cn.getMaChiNhanh() == maChiNhanh) { tenCN = cn.getTenChiNhanh(); break; }
+    if (danhSachMX != null) for (MauXe mx : danhSachMX) if (mx.getMaMauXe() == maMauXe) { tenMX = mx.getHangXe() + " " + mx.getDongXe(); break; }
 %>
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Quan Ly Xe May</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Xe Máy - Đối Tác</title>
+    <link href="${pageContext.request.contextPath}/dist/tailwind.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/css/globals.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/css/components.css" rel="stylesheet">
+    <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+    <style>
+        /* Page-specific styles */
+        .form-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: var(--spacing-2xl);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        
+        .form-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .branch-card {
+            position: relative;
+            padding: var(--spacing-lg);
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .branch-card:hover {
+            background: #ffffff;
+            box-shadow: inset 0 0 0 2px #10b981;
+        }
+
+        .branch-card input[type="radio"] {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            accent-color: #10b981;
+            cursor: pointer;
+        }
+
+        .branch-name {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: var(--spacing-sm);
+            padding-right: 28px;
+            color: var(--color-text-primary);
+        }
+
+        .branch-address {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .table-row:hover {
+            background: rgba(16, 185, 129, 0.02);
+        }
+
+        .alert-message {
+            padding: var(--spacing-md) var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .alert-message.alert-error {
+            border-left: 4px solid #dc2626;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .alert-message.alert-success {
+            border-left: 4px solid #10b981;
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: var(--spacing-lg);
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb a {
+            color: #10b981;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb-sep {
+            color: #ccc;
+        }
+
+        .panel-two-column {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-3xl);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-lg);
+            background: #1a1a1a;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .panel-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .panel-body {
+            padding: var(--spacing-lg);
+        }
+
+        .count-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            background: #10b981;
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-ready {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #10b981;
+        }
+
+        .status-maintenance {
+            background: #fff8e1;
+            color: #a35a00;
+            border: 1px solid #fbbf24;
+        }
+
+        .status-renting {
+            background: #e8f0fb;
+            color: #1a5fa8;
+            border: 1px solid #3b82f6;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: var(--spacing-3xl);
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-color-bg-primary text-color-text-primary font-body">
 
-<h1>Quan Ly Xe May</h1>
+    <div class="page-wrapper">
+        <header class="page-header">
+            <jsp:include page="/components/navbar.jsp" />
+        </header>
 
-<p><a href="<%=ctxPath%>/doitac/dashboard">← Quay lai Dashboard</a></p>
+        <main class="page-main">
+            <section class="app-container">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--spacing-3xl); margin-bottom: var(--spacing-lg);">
+                    <h1 style="font-size: var(--text-3xl); font-weight: 700; margin: 0;">Quản Lý Xe Máy</h1>
+                </div>
 
-<h2>Danh Sach Xe May</h2>
+                <% if (msg != null && !msg.isEmpty()) { %>
+                    <div class="alert-message alert-<%= "error".equals(msgType) ? "error" : "success" %>">
+                        <%= esc(msg) %>
+                    </div>
+                <% } %>
 
-<div>
-    <label>Loc theo Chi Nhanh:</label>
-    <select id="filterChiNhanh">
-        <option value="">-- Tat Ca Chi Nhanh --</option>
-    </select>
-</div>
+                <% if (currentStep == 1) { %>
+                    <!-- Step 1: Choose Branch -->
+                    <div class="form-card" style="margin-bottom: var(--spacing-3xl);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--spacing-lg); color: var(--color-text-primary); padding-bottom: var(--spacing-md); border-bottom: 2px solid #e5e7eb;">
+                            <iconify-icon icon="mdi:store" width="24" height="24" style="color: #10b981;"></iconify-icon>
+                            <span>Chọn Chi Nhánh</span>
+                        </div>
 
-<div id="xeMayList">
-    <p>Dang tai...</p>
-</div>
+                        <% if (danhSachCN.isEmpty()) { %>
+                            <div class="no-data">
+                                <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
+                                Chưa có chi nhánh nào. <a href="<%= ctx %>/doitac/quanlychinhanh" style="color: #10b981; text-decoration: none; font-weight: 600;">Thêm chi nhánh trước</a>.
+                            </div>
+                        <% } else { %>
+                            <form method="get" action="<%= ctx %>/doitac/quanlyxemay">
+                                <div class="branch-grid" style="margin-bottom: var(--spacing-lg);">
+                                    <% for (ChiNhanh cn : danhSachCN) { %>
+                                        <label class="branch-card">
+                                            <input type="radio" name="maChiNhanh" value="<%= cn.getMaChiNhanh() %>" required />
+                                            <div class="branch-name"><%= esc(cn.getTenChiNhanh()) %></div>
+                                            <div class="branch-address"><%= esc(cn.getDiaDiem()) %></div>
+                                        </label>
+                                    <% } %>
+                                </div>
+                                <button type="submit" style="background: #10b981; color: white; padding: var(--spacing-sm) var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                    <iconify-icon icon="mdi:arrow-right" width="14" height="14"></iconify-icon>
+                                    Chọn Mẫu Xe
+                                </button>
+                            </form>
+                        <% } %>
+                    </div>
 
-<hr>
+                <% } else if (currentStep == 2) { %>
+                    <!-- Step 2: Choose Model -->
+                    <div class="breadcrumb">
+                        <a href="<%= ctx %>/doitac/quanlyxemay">
+                            <iconify-icon icon="mdi:arrow-left" width="14" height="14"></iconify-icon>
+                            Đổi Chi Nhánh
+                        </a>
+                        <span class="breadcrumb-sep">›</span>
+                        <strong><%= esc(tenCN) %></strong>
+                    </div>
 
-<h2>Them Xe May Moi</h2>
+                    <div class="form-card" style="margin-bottom: var(--spacing-3xl);">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-md); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--spacing-lg); color: var(--color-text-primary); padding-bottom: var(--spacing-md); border-bottom: 2px solid #e5e7eb;">
+                            <iconify-icon icon="mdi:shape" width="24" height="24" style="color: #10b981;"></iconify-icon>
+                            <span>Chọn Mẫu Xe</span>
+                        </div>
 
-<form id="formThemXeMay">
-    <div>
-        <label>Chi Nhanh:</label>
-        <select name="maChiNhanh" id="maChiNhanhForm" required>
-            <option value="">-- Chon Chi Nhanh --</option>
-        </select>
+                        <% if (danhSachMX == null || danhSachMX.isEmpty()) { %>
+                            <div class="no-data">
+                                <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
+                                Chưa có mẫu xe. <a href="<%= ctx %>/doitac/quanlymauxe?maChiNhanh=<%= maChiNhanh %>" style="color: #10b981; text-decoration: none; font-weight: 600;">Thêm mẫu xe</a> trước.
+                            </div>
+                        <% } else { %>
+                            <form method="get" action="<%= ctx %>/doitac/quanlyxemay">
+                                <input type="hidden" name="maChiNhanh" value="<%= maChiNhanh %>" />
+                                <div class="branch-grid" style="margin-bottom: var(--spacing-lg);">
+                                    <% for (MauXe mx : danhSachMX) { %>
+                                        <label class="branch-card">
+                                            <input type="radio" name="maMauXe" value="<%= mx.getMaMauXe() %>" required />
+                                            <div class="branch-name"><%= esc(mx.getHangXe()) %> <%= esc(mx.getDongXe()) %></div>
+                                            <div class="branch-address">Đời <%= mx.getDoiXe() %> — <%= mx.getDungTich() %>cc</div>
+                                        </label>
+                                    <% } %>
+                                </div>
+                                <button type="submit" style="background: #10b981; color: white; padding: var(--spacing-sm) var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                    <iconify-icon icon="mdi:arrow-right" width="14" height="14"></iconify-icon>
+                                    Thêm Xe Máy
+                                </button>
+                            </form>
+                        <% } %>
+                    </div>
+
+                <% } else { %>
+                    <!-- Step 3: Add & Manage Vehicles -->
+                    <div class="breadcrumb">
+                        <a href="<%= ctx %>/doitac/quanlyxemay">
+                            <iconify-icon icon="mdi:arrow-left" width="14" height="14"></iconify-icon>
+                            Đổi Chi Nhánh
+                        </a>
+                        <span class="breadcrumb-sep">›</span>
+                        <strong><%= esc(tenCN) %></strong>
+                        <span class="breadcrumb-sep">›</span>
+                        <a href="<%= ctx %>/doitac/quanlyxemay?maChiNhanh=<%= maChiNhanh %>">Đổi Mẫu Xe</a>
+                        <span class="breadcrumb-sep">›</span>
+                        <strong><%= esc(tenMX) %></strong>
+                    </div>
+
+                    <div class="panel-two-column">
+                        <!-- Left Panel: Add Vehicle -->
+                        <div class="panel-content">
+                            <div class="panel-title">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <iconify-icon icon="mdi:plus-circle" width="16" height="16"></iconify-icon>
+                                    Thêm Xe Máy
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <form method="post" action="<%= ctx %>/views/doitac/quanlyxemay.jsp">
+                                    <input type="hidden" name="maChiNhanh" value="<%= maChiNhanh %>" />
+                                    <input type="hidden" name="maMauXe" value="<%= maMauXe %>" />
+
+                                    <div style="margin-bottom: var(--spacing-lg);">
+                                        <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Biển Số *</label>
+                                        <input type="text" name="bienSo" placeholder="20A1-12345" maxlength="20" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                        <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Định dạng: 20A1-12345</div>
+                                    </div>
+
+                                    <div style="margin-bottom: var(--spacing-lg);">
+                                        <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Số Khung *</label>
+                                        <input type="text" name="soKhung" placeholder="RLHPCF820HY..." maxlength="50" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                    </div>
+
+                                    <div style="margin-bottom: var(--spacing-lg);">
+                                        <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Số Máy *</label>
+                                        <input type="text" name="soMay" placeholder="PCF820E..." maxlength="50" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                    </div>
+
+                                    <div style="margin-bottom: var(--spacing-lg);">
+                                        <label style="display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: var(--spacing-sm); color: var(--color-text-primary); letter-spacing: 0.5px;">Trạng Thái</label>
+                                        <select name="trangThai" style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;">
+                                            <option value="san_sang">Sẵn sàng</option>
+                                            <option value="dang_thue">Đang thuê</option>
+                                            <option value="bao_tri">Bảo trì</option>
+                                        </select>
+                                    </div>
+
+                                    <button type="submit" style="width: 100%; background: #10b981; color: white; padding: var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                        <iconify-icon icon="mdi:plus" width="14" height="14"></iconify-icon>
+                                        Thêm Xe
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Vehicle List -->
+                        <div class="panel-content">
+                            <div class="panel-title">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span>Danh Sách Xe — <%= esc(tenMX) %></span>
+                                </div>
+                                <span class="count-badge"><%= danhSachXE != null ? danhSachXE.size() : 0 %> xe</span>
+                            </div>
+                            <div class="panel-body" style="padding: 0;">
+                                <% if (danhSachXE == null || danhSachXE.isEmpty()) { %>
+                                    <div class="no-data" style="padding: var(--spacing-3xl);">
+                                        <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
+                                        Chưa có xe máy nào với mẫu xe này tại chi nhánh.
+                                    </div>
+                                <% } else { %>
+                                    <div style="overflow-x: auto;">
+                                        <table style="width: 100%; border-collapse: collapse;">
+                                            <thead>
+                                                <tr style="background: #f9fafb;">
+                                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 50px;">#</th>
+                                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Biển Số</th>
+                                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Số Khung</th>
+                                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Số Máy</th>
+                                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 120px;">Trạng Thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% int stt = 1; for (XeMay xm : danhSachXE) { 
+                                                    String statusClass = "san_sang".equals(xm.getTrangThai()) ? "status-ready" : 
+                                                                         ("bao_tri".equals(xm.getTrangThai()) ? "status-maintenance" : "status-renting");
+                                                    String statusText = "san_sang".equals(xm.getTrangThai()) ? "Sẵn sàng" : 
+                                                                        ("bao_tri".equals(xm.getTrangThai()) ? "Bảo trì" : "Đang thuê");
+                                                %>
+                                                    <tr class="table-row" style="border-bottom: 1px solid #e5e7eb;">
+                                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><span style="display: inline-block; padding: var(--spacing-xs) var(--spacing-md); background: #10b981; color: white; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;"><%= stt++ %></span></td>
+                                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><strong style="font-family: 'Monaco', monospace; font-size: 13px;"><%= esc(xm.getBienSo()) %></strong></td>
+                                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; color: #6b7280;"><%= esc(xm.getSoKhung()) %></td>
+                                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; color: #6b7280;"><%= esc(xm.getSoMay()) %></td>
+                                                        <td style="padding: var(--spacing-md) var(--spacing-lg); text-align: center;">
+                                                            <span class="status-badge <%= statusClass %>"><%= statusText %></span>
+                                                        </td>
+                                                    </tr>
+                                                <% } %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <jsp:include page="/components/footer.jsp" />
+        </footer>
     </div>
-    <br>
-    <div>
-        <label>Mau Xe:</label>
-        <select name="maMauXe" id="maMauXe" required>
-            <option value="">-- Chon Mau Xe --</option>
-        </select>
-    </div>
-    <br>
-    <div>
-        <label>Bien So:</label>
-        <input type="text" name="bienSo" required>
-    </div>
-    <br>
-    <div>
-        <label>So Khung:</label>
-        <input type="text" name="soKhung" required>
-    </div>
-    <br>
-    <div>
-        <label>So May:</label>
-        <input type="text" name="soMay" required>
-    </div>
-    <br>
-    <div>
-        <label>Trang Thai:</label>
-        <select name="trangThai" required>
-            <option value="AVAILABLE">Co San</option>
-            <option value="RENTED">Da Thue</option>
-            <option value="MAINTENANCE">Bao Duong</option>
-        </select>
-    </div>
-    <br>
-    <button type="submit">Them Xe May</button>
-</form>
-
-<script>
-const ctx = '<%=ctxPath%>';
-
-// Load danh sach chi nhanh
-function loadChiNhanh() {
-    fetch(ctx + '/doitac/quanlychinhanh?api=1')
-        .then(res => res.text())
-        .then(xml => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(xml, 'application/xml');
-            
-            const selectFilter = document.getElementById('filterChiNhanh');
-            const selectForm = document.getElementById('maChiNhanhForm');
-            
-            doc.querySelectorAll('chiNhanh').forEach(cn => {
-                const maChiNhanh = cn.querySelector('maChiNhanh').textContent;
-                const tenChiNhanh = cn.querySelector('tenChiNhanh').textContent;
-                
-                const optionFilter = document.createElement('option');
-                optionFilter.value = maChiNhanh;
-                optionFilter.text = tenChiNhanh;
-                selectFilter.appendChild(optionFilter);
-                
-                const optionForm = document.createElement('option');
-                optionForm.value = maChiNhanh;
-                optionForm.text = tenChiNhanh;
-                selectForm.appendChild(optionForm);
-            });
-        })
-        .catch(e => console.error('Loi load chi nhanh:', e));
-}
-
-// Load danh sach mau xe khi chon chi nhanh trong form
-document.addEventListener('change', function(e) {
-    if (e.target.id === 'maChiNhanhForm') {
-        const maChiNhanh = e.target.value;
-        if (!maChiNhanh) {
-            document.getElementById('maMauXe').innerHTML = '<option value="">-- Chon Mau Xe --</option>';
-            return;
-        }
-        fetch(ctx + '/doitac/quanlymauxe?api=1&maChiNhanh=' + maChiNhanh)
-            .then(res => res.text())
-            .then(xml => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(xml, 'application/xml');
-                const select = document.getElementById('maMauXe');
-                select.innerHTML = '<option value="">-- Chon Mau Xe --</option>';
-                doc.querySelectorAll('mauXe').forEach(mx => {
-                    const option = document.createElement('option');
-                    option.value = mx.querySelector('maMauXe').textContent;
-                    option.text = mx.querySelector('hangXe').textContent + ' ' + mx.querySelector('dongXe').textContent;
-                    select.appendChild(option);
-                });
-            })
-            .catch(e => console.error('Loi load mau xe:', e));
-    }
-});
-
-// Load danh sach xe may
-function loadXeMay(maChiNhanh = '') {
-    let url = ctx + '/doitac/quanlyxemay?api=1';
-    if (maChiNhanh) {
-        url += '&maChiNhanh=' + maChiNhanh;
-    }
-    
-    fetch(url)
-        .then(res => res.text())
-        .then(xml => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(xml, 'application/xml');
-            let html = '<table border="1" cellpadding="5">';
-            html += '<tr><th>Bien So</th><th>Mau Xe</th><th>So Khung</th><th>So May</th><th>Trang Thai</th></tr>';
-            doc.querySelectorAll('xeMay').forEach(xm => {
-                const hangXe = xm.querySelector('hangXe') ? xm.querySelector('hangXe').textContent : '';
-                const dongXe = xm.querySelector('dongXe') ? xm.querySelector('dongXe').textContent : '';
-                const tenMauXe = hangXe && dongXe ? hangXe + ' ' + dongXe : (hangXe || dongXe || 'N/A');
-                html += '<tr>';
-                html += '<td>' + xm.querySelector('bienSo').textContent + '</td>';
-                html += '<td>' + tenMauXe + '</td>';
-                html += '<td>' + xm.querySelector('soKhung').textContent + '</td>';
-                html += '<td>' + xm.querySelector('soMay').textContent + '</td>';
-                html += '<td>' + xm.querySelector('trangThai').textContent + '</td>';
-                html += '</tr>';
-            });
-            html += '</table>';
-            
-            if (doc.querySelectorAll('xeMay').length === 0) {
-                html = '<p>Khong co xe may nao.</p>';
-            }
-            
-            document.getElementById('xeMayList').innerHTML = html;
-        })
-        .catch(e => {
-            document.getElementById('xeMayList').innerHTML = '<p style="color: red;">Loi load danh sach: ' + e.message + '</p>';
-        });
-}
-
-// Load khi trang load
-loadChiNhanh();
-loadXeMay();
-
-// Loc khi chon chi nhanh
-document.getElementById('filterChiNhanh').onchange = function() {
-    loadXeMay(this.value);
-};
-
-// Submit form them xe may
-document.getElementById('formThemXeMay').onsubmit = async function(e) {
-    e.preventDefault();
-    const btn = this.querySelector('button');
-    btn.disabled = true;
-
-    try {
-        const res = await fetch(ctx + '/doitac/quanlyxemay', {
-            method: 'POST',
-            body: new URLSearchParams(new FormData(this))
-        });
-
-        const xml = new DOMParser().parseFromString(await res.text(), 'application/xml');
-        const status = xml.querySelector('status').textContent;
-        const message = xml.querySelector('message').textContent;
-
-        alert(message);
-
-        if (status === 'success') {
-            this.reset();
-            loadXeMay(document.getElementById('filterChiNhanh').value);
-        }
-    } catch (error) {
-        alert('Loi: ' + error.message);
-    } finally {
-        btn.disabled = false;
-    }
-};
-</script>
-
 </body>
+<script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 </html>

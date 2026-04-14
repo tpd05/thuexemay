@@ -75,7 +75,6 @@ public class DonThueDAO {
                     dt.setTrangThai(rs.getString("trangThai"));
                     dt.setNgayTao(rs.getTimestamp("ngayTao"));
                     
-                    // ✅ Fetch chi tiết đơn để tính tổng tiền
                     String sqlChiTiet = "select maChiTiet, maDonThue, maXe, maGoiThue, " +
                                        "thoiGianBatDau, thoiGianKetThuc, thoiGianTra, donGia " +
                                        "from chitietdonthue where maDonThue = ?";
@@ -97,7 +96,7 @@ public class DonThueDAO {
                                 ct.setDonGia(rsChiTiet.getInt("donGia"));
                                 dsChiTiet.add(ct);
                             }
-                            dt.setDsChiTiet(dsChiTiet);  // ✅ Gán danh sách chi tiết
+                            dt.setDsChiTiet(dsChiTiet);  
                         }
                     }
                     
