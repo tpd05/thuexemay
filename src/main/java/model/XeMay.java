@@ -9,8 +9,6 @@ public class XeMay {
     private String bienSo;
     private String soKhung;
     private String soMay;
-    private String hangXe;
-    private String dongXe;
 
     public XeMay() {}
 
@@ -88,22 +86,6 @@ public class XeMay {
 
 	public void setSoMay(String soMay) {
 		this.soMay = soMay;
-	}
-	
-	public String getHangXe() {
-		return hangXe;
-	}
-	
-	public void setHangXe(String hangXe) {
-		this.hangXe = hangXe;
-	}
-	
-	public String getDongXe() {
-		return dongXe;
-	}
-	
-	public void setDongXe(String dongXe) {
-		this.dongXe = dongXe;
 	}
     
 }

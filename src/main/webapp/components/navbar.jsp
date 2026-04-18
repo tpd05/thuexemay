@@ -51,6 +51,14 @@
                 <c:when test="${not empty sessionScope.user}">
                     <c:choose>
                         <c:when test="${sessionScope.role == 'KHACH_HANG'}">
+                            <div style="display: flex; align-items: center; min-width: 250px; background-color: var(--color-bg-secondary); border-radius: var(--radius-md); padding: var(--spacing-xs) var(--spacing-md); opacity: 0.6; cursor: not-allowed;" title="Tính năng đang phát triển">
+                                <iconify-icon icon="mdi:magnify" style="width: 20px; height: 20px; margin-right: 8px; color: #999;"></iconify-icon>
+                                <input type="text" 
+                                       placeholder="Tìm kiếm xe..."
+                                       disabled
+                                       style="flex: 1; background: none; border: none; outline: none; color: #999; font-size: var(--text-base); padding: var(--spacing-xs) 0;" />
+                            </div>
+
                             <a href="${pageContext.request.contextPath}/khachhang/dashboard" 
                                class="nav-link"
                                style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer;">
@@ -269,6 +277,14 @@
             <c:when test="${not empty sessionScope.user}">
                 <!-- Mobile KHACH_HANG Menu -->
                 <c:if test="${sessionScope.role == 'KHACH_HANG'}">
+                    <div style="display: flex; align-items: center; padding: var(--spacing-md); border-bottom: 1px solid var(--color-border-light); background-color: var(--color-bg-secondary); opacity: 0.6; cursor: not-allowed;" title="Tính năng đang phát triển">
+                        <iconify-icon icon="mdi:magnify" style="width: 20px; height: 20px; margin-right: 8px; color: #999;"></iconify-icon>
+                        <input type="text" 
+                               placeholder="Tìm kiếm xe..."
+                               disabled
+                               style="flex: 1; background: none; border: none; outline: none; color: #999; font-size: var(--text-base);" />
+                    </div>
+
                     <a href="${pageContext.request.contextPath}/khachhang/dashboard" 
                        class="mobile-nav-link"
                        style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light);">

@@ -100,8 +100,6 @@ public class XeMayDAO {
                     xm.setBienSo(rs.getString("bienSo"));
                     xm.setSoKhung(rs.getString("soKhung"));
                     xm.setSoMay(rs.getString("soMay"));
-                    xm.setHangXe(rs.getString("hangXe"));
-                    xm.setDongXe(rs.getString("dongXe"));
                     list.add(xm);
                 }
             }
@@ -162,8 +160,6 @@ public class XeMayDAO {
                     xe.setBienSo(rs.getString("bienSo"));
                     xe.setSoKhung(rs.getString("soKhung"));
                     xe.setSoMay(rs.getString("soMay"));
-                    xe.setHangXe(rs.getString("hangXe"));
-                    xe.setDongXe(rs.getString("dongXe"));
                     return xe;
                 }
             }

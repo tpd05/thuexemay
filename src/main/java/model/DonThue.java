@@ -57,5 +57,19 @@ public class DonThue {
 	public void setTrangThai(String trangThai) {
 		this.trangThai = trangThai;
 	}
+
+	/**
+	 * Tính tổng tiền đơn thuê từ danh sách chi tiết
+	 * @return Tổng tiền của tất cả chi tiết đơn
+	 */
+	public long tinhTongTien() {
+		long total = 0;
+		if (dsChiTiet != null && !dsChiTiet.isEmpty()) {
+			for (ChiTietDonThue ct : dsChiTiet) {
+				total += ct.getDonGia();
+			}
+		}
+		return total;
+	}
     
 }

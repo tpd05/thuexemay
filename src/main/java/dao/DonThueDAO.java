@@ -104,4 +104,61 @@ public class DonThueDAO {
         }
         return null;
     }
+
+    /**
+     * Lưu DonThue + tất cả ChiTietDonThue cùng một lúc (atomic)
+     * 
+     * @param dt: DonThue object (với dsChiTiet)
+     * @param con: Connection (connection phải đang mở)
+     * @return maDonThue (ID của đơn vừa tạo)
+     * @throws Exception nếu có lỗi
+     */
+    public int luuDonThueVaChiTiet(DonThue dt, Connection con) throws Exception {
+        // 1. Tạo DonThue
+        String sqlDonThue = "insert into donthue (userID, diaChiNhanXe, trangThai) VALUES (?, ?, ?)";
+        
+        try (PreparedStatement pstm = con.prepareStatement(sqlDonThue, Statement.RETURN_GENERATED_KEYS)) {
+            pstm.setInt(1, dt.getUserID());
+            pstm.setString(2, dt.getDiaChiNhanXe());
+            pstm.setString(3, dt.getTrangThai());
+            
+            int affectedRows = pstm.executeUpdate();
+            if (affectedRows == 0) {
+                throw new RuntimeException("Tạo đơn thuê thất bại");
+            }
+            
+            int maDon = 0;
+            try (ResultSet rs = pstm.getGeneratedKeys()) {
+                if (rs.next()) {
+                    maDon = rs.getInt(1);
+                } else {
+                    throw new RuntimeException("Không lấy được ID đơn thuê");
+                }
+            }
+            
+            // 2. Tạo tất cả ChiTietDonThue
+            String sqlChiTiet = "insert into chitietdonthue (maDonThue, maXe, maGoiThue, " +
+                               "thoiGianBatDau, thoiGianKetThuc, donGia) VALUES (?, ?, ?, ?, ?, ?)";
+            
+            if (dt.getDsChiTiet() != null && !dt.getDsChiTiet().isEmpty()) {
+                try (PreparedStatement pstmChiTiet = con.prepareStatement(sqlChiTiet)) {
+                    for (ChiTietDonThue ct : dt.getDsChiTiet()) {
+                        pstmChiTiet.setInt(1, maDon);
+                        pstmChiTiet.setInt(2, ct.getMaXe());
+                        pstmChiTiet.setInt(3, ct.getMaGoiThue());
+                        pstmChiTiet.setTimestamp(4, java.sql.Timestamp.valueOf(ct.getThoiGianBatDau()));
+                        pstmChiTiet.setTimestamp(5, java.sql.Timestamp.valueOf(ct.getThoiGianKetThuc()));
+                        pstmChiTiet.setInt(6, ct.getDonGia());
+                        
+                        int rowsInserted = pstmChiTiet.executeUpdate();
+                        if (rowsInserted == 0) {
+                            throw new RuntimeException("Lưu chi tiết đơn thất bại");
+                        }
+                    }
+                }
+            }
+            
+            return maDon;
+        }
+    }
 }

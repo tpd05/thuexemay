@@ -1,6 +1,7 @@
 package servlet;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -9,9 +10,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import dao.MauXeDAO;
 import dao.XeMayDAO;
+import model.MauXe;
 import model.XeMay;
 import service.KiemTraDoiTac;
+import util.Connect;
 
 @WebServlet("/doitac/quanlyxemay")
 public class ThemXeMayServlet extends HttpServlet {
@@ -56,7 +60,15 @@ public class ThemXeMayServlet extends HttpServlet {
             }
 
             StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<xeMays>\n");
+            MauXeDAO mauXeDAO = new MauXeDAO();
+            Connection con = Connect.getInstance().getConnect();
+            
             for (XeMay xm : danhSach) {
+                // Lấy MauXe để có hangXe, dongXe
+                MauXe mauXe = mauXeDAO.layMauXeTheoId(xm.getMaMauXe(), con);
+                String hangXe = (mauXe != null) ? mauXe.getHangXe() : "";
+                String dongXe = (mauXe != null) ? mauXe.getDongXe() : "";
+                
                 xml.append("    <xeMay>\n")
                    .append("        <maXe>").append(xm.getMaXe()).append("</maXe>\n")
                    .append("        <maMauXe>").append(xm.getMaMauXe()).append("</maMauXe>\n")
@@ -64,13 +76,21 @@ public class ThemXeMayServlet extends HttpServlet {
                    .append("        <bienSo>").append(escapeXml(xm.getBienSo())).append("</bienSo>\n")
                    .append("        <soKhung>").append(escapeXml(xm.getSoKhung())).append("</soKhung>\n")
                    .append("        <soMay>").append(escapeXml(xm.getSoMay())).append("</soMay>\n")
-                   .append("        <hangXe>").append(escapeXml(xm.getHangXe())).append("</hangXe>\n")
-                   .append("        <dongXe>").append(escapeXml(xm.getDongXe())).append("</dongXe>\n")
+                   .append("        <hangXe>").append(escapeXml(hangXe)).append("</hangXe>\n")
+                   .append("        <dongXe>").append(escapeXml(dongXe)).append("</dongXe>\n")
                    .append("        <trangThai>").append(escapeXml(xm.getTrangThai())).append("</trangThai>\n")
                    .append("    </xeMay>\n");
             }
             xml.append("</xeMays>");
             response.getWriter().write(xml.toString());
+            
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
 
         } catch (NumberFormatException e) {
             guiPhanHoiXML(response, 400, "error", "Mã chi nhánh không hợp lệ");

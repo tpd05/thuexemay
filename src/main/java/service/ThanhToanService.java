@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import dao.ChiTietDonThueDAO;
 import dao.DonThueDAO;
 import dao.ThanhToanDAO;
 import model.ChiTietDonThue;
@@ -51,14 +50,63 @@ public class ThanhToanService {
 	}
 
 	/**
+	 * Lưu DonThue + ChiTietDonThue vào DB
+	 * 
+	 * @param don: DonThue object (với dsChiTiet)
+	 * @param con: Connection
+	 * @return maDon (ID đơn vừa tạo)
+	 * @throws Exception
+	 */
+	public static int luuDonThue(DonThue don, Connection con) throws Exception {
+		don.setTrangThai("DA_THANH_TOAN");
+		DonThueDAO donDAO = new DonThueDAO();
+		int maDon = donDAO.luuDonThueVaChiTiet(don, con);
+		
+		if (maDon <= 0) {
+			throw new Exception("Tạo đơn thuê thất bại - maDon=" + maDon);
+		}
+		
+		System.out.println("DEBUG: DonThue + ChiTietDonThue saved with maDon=" + maDon);
+		return maDon;
+	}
+
+	/**
+	 * Lưu ThanhToan vào DB
+	 * 
+	 * @param maDon: ID đơn thuê
+	 * @param soTien: Số tiền thanh toán
+	 * @param phuongThuc: Phương thức thanh toán
+	 * @param con: Connection
+	 * @return maThanhToan (ID thanh toán vừa tạo)
+	 * @throws Exception
+	 */
+	public static int luuThanhToan(int maDon, double soTien, String phuongThuc, Connection con) throws Exception {
+		ThanhToan tt = new ThanhToan();
+		tt.setMaDonThue(maDon);
+		tt.setSoTien((float)soTien);
+		tt.setPhuongThuc(phuongThuc);
+		tt.setTrangThai("DA_THANH_TOAN");
+		tt.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
+		
+		ThanhToanDAO ttDAO = new ThanhToanDAO();
+		int maThanhToan = ttDAO.taoThanhToan(tt, con);
+		
+		if (maThanhToan <= 0) {
+			throw new Exception("Tạo ghi nhận thanh toán thất bại - maThanhToan=" + maThanhToan);
+		}
+		
+		System.out.println("DEBUG: ThanhToan created with maThanhToan=" + maThanhToan);
+		return maThanhToan;
+	}
+
+	/**
 	 * Lưu DonThue + ChiTietDonThue + ThanhToan vào DB (gọi khi thanh toán THÀNH CÔNG)
 	 *
 	 * Flow:
-	 * 1. Create DonThue with status DA_THANH_TOAN
-	 * 2. Create ChiTietDonThue entries linked to DonThue
-	 * 3. Create ThanhToan with status DA_THANH_TOAN (linked to DonThue)
-	 * 4. DELETE corresponding MucHang from GioHang
-	 * 5. All 4 records saved atomically - if any fails, rollback everything
+	 * 1. Lưu DonThue + ChiTietDonThue (gọi luuDonThue)
+	 * 2. Lưu ThanhToan (gọi luuThanhToan)
+	 * 3. DELETE corresponding MucHang from GioHang
+	 * 4. All records saved atomically - if any fails, rollback everything
 	 *
 	 * @param don: DonThueAo từ session
 	 * @param soTien: Số tiền thanh toán
@@ -73,56 +121,22 @@ public class ThanhToanService {
 			con = Connect.getInstance().getConnect();
 			con.setAutoCommit(false);
 
-			// 1. Lưu DonThue với trạng thái DA_THANH_TOAN
-			don.setTrangThai("DA_THANH_TOAN");
-			DonThueDAO donDAO = new DonThueDAO();
-			int maDon = donDAO.taoDonThue(don, con);
+			// 1. Lưu DonThue + ChiTietDonThue
+			int maDon = luuDonThue(don, con);
 
-			if (maDon <= 0) {
-				con.rollback();
-				throw new Exception("Tạo đơn thuê thất bại - maDon=" + maDon);
-			}
+			// 2. Lưu ThanhToan
+			int maThanhToan = luuThanhToan(maDon, soTien, phuongThuc, con);
 
-			System.out.println("DEBUG: DonThue created with maDon=" + maDon);
-
-			// 2. Lưu tất cả ChiTietDonThue
+			// 3. DELETE MucHang from GioHang (items in this order)
 			List<Integer> goiThueIds = new ArrayList<>();
 			if (don.getDsChiTiet() != null && !don.getDsChiTiet().isEmpty()) {
-				ChiTietDonThueDAO ctDAO = new ChiTietDonThueDAO();
 				for (ChiTietDonThue ct : don.getDsChiTiet()) {
-					ct.setMaDonThue(maDon);
-					if (!ctDAO.themChiTiet(ct, con)) {
-						con.rollback();
-						throw new Exception("Lưu chi tiết đơn thất bại");
-					}
-					// Collect GoiThue IDs để xóa từ cart sau
 					if (!goiThueIds.contains(ct.getMaGoiThue())) {
 						goiThueIds.add(ct.getMaGoiThue());
 					}
 				}
 			}
 
-			System.out.println("DEBUG: ChiTietDonThue saved");
-
-			// 3. CREATE ThanhToan (not update) with maDon linked and status DA_THANH_TOAN
-			ThanhToan tt = new ThanhToan();
-			tt.setMaDonThue(maDon);
-			tt.setSoTien((float)soTien);
-			tt.setPhuongThuc(phuongThuc);
-			tt.setTrangThai("DA_THANH_TOAN");
-			tt.setThoiGianTao(new Timestamp(System.currentTimeMillis()));
-
-			ThanhToanDAO ttDAO = new ThanhToanDAO();
-			int maThanhToan = ttDAO.taoThanhToan(tt, con);
-
-			if (maThanhToan <= 0) {
-				con.rollback();
-				throw new Exception("Tạo ghi nhận thanh toán thất bại - maThanhToan=" + maThanhToan);
-			}
-
-			System.out.println("DEBUG: ThanhToan created with maThanhToan=" + maThanhToan);
-
-			// 4. DELETE MucHang from GioHang (items in this order)
 			if (gh != null && !goiThueIds.isEmpty()) {
 				GioHangService gioHangService = new GioHangService();
 				boolean delResult = gioHangService.xoaMucHangTheoGoiThue(gh, goiThueIds, con);
@@ -133,7 +147,7 @@ public class ThanhToanService {
 				System.out.println("DEBUG: MucHang deleted from GioHang");
 			}
 
-			// Commit - all 4 records saved atomically
+			// Commit - all records saved atomically
 			con.commit();
 			System.out.println("DEBUG: Transaction committed successfully - Order + Payment + Cart cleanup");
 			return true;
