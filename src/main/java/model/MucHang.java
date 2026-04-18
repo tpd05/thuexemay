@@ -76,21 +76,30 @@ public class MucHang {
 	        return 0;
 	    }
 
-	    long hours = java.time.Duration.between(
+	    // Use minutes for accurate calculation (like JavaScript frontend)
+	    long minutes = java.time.Duration.between(
 	        this.thoiGianBatDau,
 	        this.thoiGianKetThuc
-	    ).toHours();
+	    ).toMinutes();
 
-	    if (hours <= 0) return 0;
+	    if (minutes <= 0) return 0;
 
+	    double hours = minutes / 60.0;  // Convert to hours with decimal precision
 	    double tien = 0;
 
-	    
-	    if (hours >= 24) {
-	        long days = (long) Math.ceil(hours / 24.0);
-	        tien = days * this.goiThue.getGiaNgay();
+	    // New pricing logic: giaNgay + giaTuan (1 week = 7 days = 168 hours)
+	    if (hours >= 168) {
+	        // >= 1 week: weeks × giaTuan + remainingHours × (giaNgay/24)
+	        long weeks = (long)(hours / 168);
+	        double remainingHours = hours - (weeks * 168);
+	        double remainingDays = remainingHours / 24.0;
+	        
+	        tien = (weeks * this.goiThue.getGiaTuan()) + 
+	               (remainingDays * this.goiThue.getGiaNgay());
 	    } else {
-	        tien = hours * this.goiThue.getGiaGio();
+	        // < 1 week: days × giaNgay + remainingHours × (giaNgay/24)
+	        double days = hours / 24.0;
+	        tien = days * this.goiThue.getGiaNgay();
 	    }
 
 	    return tien * this.soLuong;

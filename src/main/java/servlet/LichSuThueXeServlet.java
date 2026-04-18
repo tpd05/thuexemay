@@ -169,15 +169,12 @@ public class LichSuThueXeServlet extends HttpServlet {
 					out.println("    <userID>" + donThue.getUserID() + "</userID>");
 					out.println("    <diaChiNhanXe>" + escapeXml(donThue.getDiaChiNhanXe()) + "</diaChiNhanXe>");
 					out.println("    <trangThai>" + escapeXml(donThue.getTrangThai()) + "</trangThai>");
-					if (donThue.getNgayTao() != null) {
-						out.println("    <ngayTao>" + donThue.getNgayTao() + "</ngayTao>");
-					}
-					out.println("  </don>");
-				}
+				out.println("  </don>");
+			}
 
-				out.println("</lich_su_don_thue>");
-				con.close();
-			} catch (Exception e) {
+			out.println("</lich_su_don_thue>");
+			con.close();
+		} catch (Exception e) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				try (PrintWriter out = response.getWriter()) {
 					out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");

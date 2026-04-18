@@ -26,16 +26,16 @@ public class GoiThueDAO {
 
 	    // FIX: throws SQLException thay vì nuốt lỗi
 	    public void themGoiThue(GoiThue goiThue) throws SQLException {
-	        String sql = "insert into GoiThue (maMauXe, maDoiTac, maChiNhanh, tenGoiThue, phuKien, giaNgay, giaGio, phuThu) " +
-	                     "values (?, ?, ?, ?, ?, ?, ?, ?)";
-	        try (PreparedStatement ps = con.prepareStatement(sql)) {
-	            ps.setInt(1, goiThue.getMaMauXe());
-	            ps.setInt(2, goiThue.getMaDoiTac());
-	            ps.setInt(3, goiThue.getMaChiNhanh());
-	            ps.setString(4, goiThue.getTenGoiThue());
-	            ps.setString(5, goiThue.getPhuKien());
-	            ps.setFloat(6, goiThue.getGiaNgay());
-	            ps.setFloat(7, goiThue.getGiaGio());
+        String sql = "insert into GoiThue (maMauXe, maDoiTac, maChiNhanh, tenGoiThue, phuKien, giaNgay, giaTuan, phuThu) " +
+                     "values (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, goiThue.getMaMauXe());
+            ps.setInt(2, goiThue.getMaDoiTac());
+            ps.setInt(3, goiThue.getMaChiNhanh());
+            ps.setString(4, goiThue.getTenGoiThue());
+            ps.setString(5, goiThue.getPhuKien());
+            ps.setFloat(6, goiThue.getGiaNgay());
+            ps.setFloat(7, goiThue.getGiaTuan());
 	            ps.setFloat(8, goiThue.getPhuThu());
 	            ps.executeUpdate();
 	        }
@@ -58,8 +58,8 @@ public class GoiThueDAO {
 	            "where (gt.tenGoiThue like ? or gt.phuKien like ? or mx.hangXe like ? or mx.dongXe like ?) "
 	        );
 	        if (laSo) {
-	            sql.append("or (gt.giaNgay >= ? and gt.giaNgay <= ? or gt.giaGio >= ? and gt.giaGio <= ?) ");
-	            sql.append("order by least(abs(gt.giaNgay - ?), abs(gt.giaGio - ?)) asc");
+            sql.append("or (gt.giaNgay >= ? and gt.giaNgay <= ? or gt.giaTuan >= ? and gt.giaTuan <= ?) ");
+            sql.append("order by least(abs(gt.giaNgay - ?), abs(gt.giaTuan - ?)) asc");
 	        }
 
 	        try {
@@ -89,7 +89,7 @@ public class GoiThueDAO {
 	                    gt.setTenGoiThue(rs.getString("tenGoiThue"));
 	                    gt.setPhuKien(rs.getString("phuKien"));
 	                    gt.setGiaNgay(rs.getFloat("giaNgay"));
-	                    gt.setGiaGio(rs.getFloat("giaGio"));
+                    gt.setGiaTuan(rs.getFloat("giaTuan"));
 	                    gt.setPhuThu(rs.getFloat("phuThu"));
 
 	                    list.add(gt);
@@ -106,7 +106,7 @@ public class GoiThueDAO {
 
 	        String sql =
 	            "SELECT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.tenGoiThue, " +
-            "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
+            "       gt.phuKien, gt.giaNgay, gt.giaTuan, gt.phuThu " +
 	            "FROM GoiThue gt WHERE gt.maDoiTac = ? " +
 	            "ORDER BY gt.maGoiThue DESC";
 
@@ -125,7 +125,7 @@ public class GoiThueDAO {
 	                gt.setTenGoiThue(rs.getString("tenGoiThue"));
 	                gt.setPhuKien(rs.getString("phuKien"));
 	                gt.setGiaNgay(rs.getFloat("giaNgay"));
-	                gt.setGiaGio(rs.getFloat("giaGio"));
+                gt.setGiaTuan(rs.getFloat("giaTuan"));
 	                gt.setPhuThu(rs.getFloat("phuThu"));
 
 
@@ -179,7 +179,7 @@ public class GoiThueDAO {
 	            g.setMaGoiThue(rs.getInt("maGoiThue"));
 	            g.setTenGoiThue(rs.getString("tenGoiThue"));
 	            g.setGiaNgay(rs.getFloat("giaNgay"));
-	            g.setGiaGio(rs.getFloat("giaGio"));
+            g.setGiaTuan(rs.getFloat("giaTuan"));
 	            g.setPhuThu(rs.getFloat("phuThu"));
 
 
@@ -216,7 +216,7 @@ public class GoiThueDAO {
 		public List<GoiThue> layTatCaGoiThue(Connection con) throws SQLException {
 			List<GoiThue> list = new ArrayList<>();
 			String sql = "SELECT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.maDoiTac, gt.tenGoiThue, " +
-						 "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
+						 "       gt.phuKien, gt.giaNgay, gt.giaTuan, gt.phuThu " +
 						 "FROM GoiThue gt " +
 						 "ORDER BY gt.maGoiThue DESC";
 			try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -230,7 +230,7 @@ public class GoiThueDAO {
 					gt.setTenGoiThue(rs.getString("tenGoiThue"));
 					gt.setPhuKien(rs.getString("phuKien"));
 					gt.setGiaNgay(rs.getFloat("giaNgay"));
-					gt.setGiaGio(rs.getFloat("giaGio"));
+				gt.setGiaTuan(rs.getFloat("giaTuan"));
 					gt.setPhuThu(rs.getFloat("phuThu"));
 
 					list.add(gt);
@@ -242,7 +242,7 @@ public class GoiThueDAO {
 		// Lấy gói thuê theo ID
 		public GoiThue layGoiThueTheoId(int maGoiThue, Connection con) throws SQLException {
 			String sql = "SELECT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.maDoiTac, gt.tenGoiThue, " +
-						 "       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
+						 "       gt.phuKien, gt.giaNgay, gt.giaTuan, gt.phuThu " +
 						 "FROM GoiThue gt " +
 						 "WHERE gt.maGoiThue = ?";
 			try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -257,7 +257,7 @@ public class GoiThueDAO {
 						gt.setTenGoiThue(rs.getString("tenGoiThue"));
 						gt.setPhuKien(rs.getString("phuKien"));
 						gt.setGiaNgay(rs.getFloat("giaNgay"));
-						gt.setGiaGio(rs.getFloat("giaGio"));
+					gt.setGiaTuan(rs.getFloat("giaTuan"));
 						gt.setPhuThu(rs.getFloat("phuThu"));
 
 						return gt;
@@ -267,19 +267,19 @@ public class GoiThueDAO {
 			return null;
 		}
 
-		// Filter Method 1: Get price statistics (min/max for day & hour rates)
+		// Filter Method 1: Get price statistics (min/max for day & week rates)
 		public Map<String, Object> getPriceStats(Connection con) throws SQLException {
 			Map<String, Object> stats = new HashMap<>();
 			String sql = "SELECT MIN(giaNgay) as minNgay, MAX(giaNgay) as maxNgay, " +
-						 "       MIN(giaGio) as minGio, MAX(giaGio) as maxGio " +
+						 "       MIN(giaTuan) as minTuan, MAX(giaTuan) as maxTuan " +
 						 "FROM GoiThue";
 			try (PreparedStatement ps = con.prepareStatement(sql);
 				 ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
 					stats.put("minNgay", rs.getFloat("minNgay"));
 					stats.put("maxNgay", rs.getFloat("maxNgay"));
-					stats.put("minGio", rs.getFloat("minGio"));
-					stats.put("maxGio", rs.getFloat("maxGio"));
+					stats.put("minTuan", rs.getFloat("minTuan"));
+					stats.put("maxTuan", rs.getFloat("maxTuan"));
 				}
 			}
 			return stats;
@@ -326,7 +326,7 @@ public class GoiThueDAO {
 			List<GoiThue> list = new ArrayList<>();
 			StringBuilder sql = new StringBuilder(
 				"SELECT DISTINCT gt.maGoiThue, gt.maMauXe, gt.maChiNhanh, gt.maDoiTac, gt.tenGoiThue, " +
-				"       gt.phuKien, gt.giaNgay, gt.giaGio, gt.phuThu " +
+				"       gt.phuKien, gt.giaNgay, gt.giaTuan, gt.phuThu " +
 				"FROM GoiThue gt " +
 				"WHERE 1=1"
 			);
@@ -345,8 +345,8 @@ public class GoiThueDAO {
 			if (priceType != null && !priceType.isEmpty() && minPrice != null && maxPrice != null) {
 				if ("day".equals(priceType)) {
 					sql.append(" AND gt.giaNgay BETWEEN ? AND ?");
-				} else if ("hour".equals(priceType)) {
-					sql.append(" AND gt.giaGio BETWEEN ? AND ?");
+				} else if ("week".equals(priceType)) {
+					sql.append(" AND gt.giaTuan BETWEEN ? AND ?");
 				}
 			}
 
@@ -378,7 +378,7 @@ public class GoiThueDAO {
 						gt.setTenGoiThue(rs.getString("tenGoiThue"));
 						gt.setPhuKien(rs.getString("phuKien"));
 						gt.setGiaNgay(rs.getFloat("giaNgay"));
-						gt.setGiaGio(rs.getFloat("giaGio"));
+					gt.setGiaTuan(rs.getFloat("giaTuan"));
 						gt.setPhuThu(rs.getFloat("phuThu"));
 						list.add(gt);
 					}

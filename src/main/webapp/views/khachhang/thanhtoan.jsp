@@ -516,6 +516,30 @@ function handleImageError(img) {
     img.parentElement.innerHTML = '<div style="text-align: center; padding: var(--spacing-lg);"><iconify-icon icon="mdi:motorcycle" style="width: 64px; height: 64px; color: var(--color-text-secondary);"></iconify-icon><p style="margin: var(--spacing-md) 0 0 0; color: var(--color-text-secondary); font-size: var(--text-sm);">Không thể tải hình ảnh</p></div>';
 }
 
+/**
+ * Override confirmLogout to show data loss warning
+ * Show warning that unsaved payment data will be lost
+ */
+window.confirmLogout = function() {
+    const ctx = '${pageContext.request.contextPath}';
+    if (window.UI && window.UI.confirm) {
+        UI.confirm(
+            'Đăng Xuất',
+            '⚠️ Giao dịch thanh toán chưa hoàn tất sẽ bị hủy!\n\nBạn có chắc muốn đăng xuất?',
+            function() {
+                // User clicked Xác Nhận (Confirm)
+                window.location.href = ctx + '/logout';
+            }
+            // No callback for Cancel - just closes the dialog
+        );
+    } else {
+        // Fallback to browser confirm
+        if (confirm('⚠️ Giao dịch thanh toán chưa hoàn tất sẽ bị hủy!\n\nBạn có chắc muốn đăng xuất?')) {
+            window.location.href = ctx + '/logout';
+        }
+    }
+};
+
     </script>
 </body>
 </html>

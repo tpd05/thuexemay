@@ -1,6 +1,5 @@
 package model;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 public class DonThue {
@@ -8,7 +7,6 @@ public class DonThue {
     private int userID;
     private String diaChiNhanXe;
     private String trangThai;
-    private Timestamp ngayTao;
     private List<ChiTietDonThue> dsChiTiet;
 
     public int getUserID() {
@@ -58,14 +56,6 @@ public class DonThue {
 
 	public void setTrangThai(String trangThai) {
 		this.trangThai = trangThai;
-	}
-
-	public Timestamp getNgayTao() {
-		return ngayTao;
-	}
-
-	public void setNgayTao(Timestamp ngayTao) {
-		this.ngayTao = ngayTao;
 	}
     
 }

@@ -37,7 +37,7 @@ String ctxPath = request.getContextPath();
                                 Chọn Loại Tài Khoản
                                 <span style="color: var(--color-danger);">*</span>
                             </label>
-                            <select name="role" id="roleSelect" onchange="updateFormFields()"
+                            <select name="role" id="roleSelect"
                                     style="width: 100%; padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); font-size: var(--text-base); background-color: white; cursor: pointer; transition: all var(--transition-normal);"
                                     onfocus="this.style.borderColor='var(--color-primary)'"
                                     onblur="this.style.borderColor='var(--color-border-light)'">
@@ -148,19 +148,6 @@ String ctxPath = request.getContextPath();
                             </div>
                         </div>
 
-                        <!-- PARTNER BRANCHES -->
-                        <div id="doiTacFields" class="hidden" style="background-color: var(--color-bg-secondary); padding: var(--spacing-lg); border-radius: var(--radius-md); border-left: 4px solid var(--color-primary);">
-                            <h3 style="font-size: var(--text-lg); font-weight: 700; margin: 0 0 var(--spacing-md) 0; display: flex; align-items: center; gap: var(--spacing-sm);">
-                                <iconify-icon icon="mdi:store" style="width: 24px; height: 24px; color: var(--color-primary);"></iconify-icon>
-                                Thông Tin Chi Nhánh
-                            </h3>
-                            <div id="branchContainer" style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-bottom: var(--spacing-md);"></div>
-                            <button type="button" onclick="addBranch()" class="btn btn-outline" style="width: 100%;">
-                                <iconify-icon icon="mdi:plus" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;"></iconify-icon>
-                                Thêm Chi Nhánh
-                            </button>
-                        </div>
-
                         <!-- Message -->
                         <p id="msg" style="text-align: center; font-weight: 600; margin: 0; padding: var(--spacing-md); border-radius: var(--radius-md); display: none;"></p>
 
@@ -193,7 +180,6 @@ String ctxPath = request.getContextPath();
     <script src="${pageContext.request.contextPath}/js/ui-utils.js"></script>
     <script>
         const ctx = '<%=ctxPath%>';
-        let branchIndex = 0;
 
         // Toggle password visibility
         document.querySelectorAll('.togglePassword').forEach(button => {
@@ -211,57 +197,6 @@ String ctxPath = request.getContextPath();
                 }
             });
         });
-
-        function addBranch() {
-            const container = document.getElementById('branchContainer');
-            const branchNum = branchIndex + 1;
-
-            const branchDiv = document.createElement('div');
-            branchDiv.className = 'card';
-            branchDiv.style.padding = 'var(--spacing-md)';
-            branchDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;margin-bottom: var(--spacing-md);">
-                    <h4 style="font-weight: 600; margin: 0; color: var(--color-primary);">Chi Nhánh #${branchNum}</h4>
-                    <button type="button" onclick="removeBranch(this)" class="btn btn-danger" style="padding: var(--spacing-xs) var(--spacing-sm); font-size: var(--text-sm);">
-                        <iconify-icon icon="mdi:trash" style="width: 16px; height: 16px; vertical-align: middle;"></iconify-icon>
-                    </button>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
-                    <input type="text" name="tenChiNhanh_${branchIndex}" required placeholder="Tên chi nhánh"
-                           style="padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); font-size: var(--text-sm);">
-                    <input type="text" name="diaDiem_${branchIndex}" required placeholder="Địa điểm"
-                           style="padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); font-size: var(--text-sm);">
-                </div>
-            `;
-
-            container.appendChild(branchDiv);
-            branchIndex++;
-        }
-
-        function removeBranch(btn) {
-            const container = document.getElementById('branchContainer');
-            if (container.children.length > 1) {
-                btn.closest('.card').remove();
-            } else {
-                UI.toast('Phải có ít nhất 1 chi nhánh', 'warning');
-            }
-        }
-
-        function updateFormFields() {
-            const role = document.getElementById('roleSelect').value;
-            const doiTacFields = document.getElementById('doiTacFields');
-
-            if (role === 'DOI_TAC') {
-                doiTacFields.classList.remove('hidden');
-                if (document.getElementById('branchContainer').children.length === 0) {
-                    addBranch();
-                }
-            } else {
-                doiTacFields.classList.add('hidden');
-                document.getElementById('branchContainer').innerHTML = '';
-                branchIndex = 0;
-            }
-        }
 
         document.getElementById('f').onsubmit = async function(e) {
             e.preventDefault();
@@ -308,8 +243,6 @@ String ctxPath = request.getContextPath();
                 btn.innerHTML = originalHTML;
             }
         };
-
-        updateFormFields();
     </script>
 </body>
 </html>

@@ -123,13 +123,6 @@
                                 Trang Chủ
                             </a>
                             
-                            <a href="${pageContext.request.contextPath}/doitac/quanlygoithue" 
-                               class="nav-link"
-                               style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer;">
-                                <iconify-icon icon="mdi:package-variant" style="width: 20px; height: 20px; margin-right: 4px;"></iconify-icon>
-                                Quản lý gói thuê
-                            </a>
-                            
                             <a href="${pageContext.request.contextPath}/doitac/quanlychinhanh" 
                                class="nav-link"
                                style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer;">
@@ -138,36 +131,32 @@
                             </a>
                             
                             <!-- Quản lý xe máy with submenu -->
-                            <div style="position: relative; display: flex; align-items: center;">
-                                <button class="nav-link" 
-                                        style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer; background: none; border: none; gap: 4px;"
-                                        onmouseover="document.getElementById('quanlyxemaySubmenu').style.display = 'block'"
-                                        onmouseout="document.getElementById('quanlyxemaySubmenu').style.display = 'none'">
-                                    <iconify-icon icon="mdi:motorcycle" style="width: 20px; height: 20px;"></iconify-icon>
-                                    Quản lý xe máy
-                                    <iconify-icon icon="mdi:chevron-down" style="width: 16px; height: 16px;"></iconify-icon>
-                                </button>
-                                
-                                <div id="quanlyxemaySubmenu" 
-                                     style="display: none; position: absolute; top: 100%; left: 0; background-color: var(--color-bg-primary); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-md); min-width: 250px; z-index: 1000;"
-                                     onmouseover="this.style.display = 'block'"
-                                     onmouseout="this.style.display = 'none'">
-                                    <a href="${pageContext.request.contextPath}/doitac/quanlymauxe"
-                                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light); transition: all var(--transition-normal);"
-                                       onmouseover="this.style.backgroundColor='var(--color-bg-secondary)'; this.style.color='var(--color-primary)'"
-                                       onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--color-text-secondary)'">
-                                        <iconify-icon icon="mdi:car-multiple" style="width: 18px; height: 18px; margin-right: 8px;"></iconify-icon>
-                                        Quản lý mẫu xe
-                                    </a>
-                                    <a href="${pageContext.request.contextPath}/doitac/quanlyxemay"
-                                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; transition: all var(--transition-normal);"
-                                       onmouseover="this.style.backgroundColor='var(--color-bg-secondary)'; this.style.color='var(--color-primary)'"
-                                       onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--color-text-secondary)'">
-                                        <iconify-icon icon="mdi:motorcycle" style="width: 18px; height: 18px; margin-right: 8px;"></iconify-icon>
-                                        Quản lý xe máy
-                                    </a>
-                                </div>
-                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+    
+    <!-- Nút Quản lý mẫu xe -->
+    <a href="${pageContext.request.contextPath}/doitac/quanlymauxe"
+       class="nav-link"
+       style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); gap: 4px;">
+        <iconify-icon icon="mdi:format-list-bulleted" style="width: 20px; height: 20px;"></iconify-icon>
+        Quản lý mẫu xe
+    </a>
+
+    <!-- Nút Quản lý xe máy -->
+    <a href="${pageContext.request.contextPath}/doitac/quanlyxemay"
+       class="nav-link"
+       style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); gap: 4px;">
+        <iconify-icon icon="mdi:motorcycle" style="width: 20px; height: 20px;"></iconify-icon>
+        Quản lý xe máy
+    </a>
+
+</div>
+                            
+                            <a href="${pageContext.request.contextPath}/doitac/quanlygoithue" 
+                               class="nav-link"
+                               style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer;">
+                                <iconify-icon icon="mdi:package-variant" style="width: 20px; height: 20px; margin-right: 4px;"></iconify-icon>
+                                Quản lý gói thuê
+                            </a>
 
                             <div style="position: relative; display: flex; align-items: center;">
                                 <button class="nav-link" 
@@ -191,13 +180,13 @@
                                         <iconify-icon icon="mdi:briefcase" style="width: 18px; height: 18px; margin-right: 8px;"></iconify-icon>
                                         Quản lý đơn thuê
                                     </a>
-                                    <a href="${pageContext.request.contextPath}/logout"
-                                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; transition: all var(--transition-normal);"
+                                    <button onclick="confirmLogout()"
+                                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; transition: all var(--transition-normal); background: none; border: none; cursor: pointer; width: 100%; text-align: left;"
                                        onmouseover="this.style.backgroundColor='var(--color-bg-secondary)'; this.style.color='var(--color-primary)'"
                                        onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--color-text-secondary)'">
                                         <iconify-icon icon="mdi:logout" style="width: 18px; height: 18px; margin-right: 8px;"></iconify-icon>
                                         Đăng Xuất
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </c:when>
@@ -215,11 +204,13 @@
                     <!-- Logout Button -->
                     <c:if test="${sessionScope.role != 'DOI_TAC'}">
                         <div style="display: flex; align-items: center; gap: var(--spacing-lg);">
-                            <a href="${pageContext.request.contextPath}/logout" 
-                               style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer;">
+                            <button onclick="confirmLogout()" 
+                               style="display: flex; align-items: center; color: var(--color-text-secondary); text-decoration: none; padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--radius-md); transition: all var(--transition-normal); cursor: pointer; background: none; border: none;"
+                               onmouseover="this.style.color='var(--color-primary)'"
+                               onmouseout="this.style.color='var(--color-text-secondary)'">
                                 <iconify-icon icon="mdi:logout" style="width: 20px; height: 20px; margin-right: 4px;"></iconify-icon>
                                 Đăng Xuất
-                            </a>
+                            </button>
                         </div>
                     </c:if>
                 </c:when>
@@ -338,13 +329,6 @@
                         Trang Chủ
                     </a>
                     
-                    <a href="${pageContext.request.contextPath}/doitac/quanlygoithue" 
-                       class="mobile-nav-link"
-                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light);">
-                        <iconify-icon icon="mdi:package-variant" style="width: 20px; height: 20px; margin-right: 8px;"></iconify-icon>
-                        Quản lý gói thuê
-                    </a>
-                    
                     <a href="${pageContext.request.contextPath}/doitac/quanlychinhanh" 
                        class="mobile-nav-link"
                        style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light);">
@@ -352,11 +336,25 @@
                         Quản lý chi nhánh
                     </a>
                     
+                    <a href="${pageContext.request.contextPath}/doitac/quanlymauxe" 
+                       class="mobile-nav-link"
+                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light);">
+                        <iconify-icon icon="mdi:format-list-bulleted" style="width: 20px; height: 20px; margin-right: 8px;"></iconify-icon>
+                        Quản lý mẫu xe
+                    </a>
+                    
                     <a href="${pageContext.request.contextPath}/doitac/quanlyxemay" 
                        class="mobile-nav-link"
                        style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light);">
                         <iconify-icon icon="mdi:motorcycle" style="width: 20px; height: 20px; margin-right: 8px;"></iconify-icon>
                         Quản lý xe máy
+                    </a>
+                    
+                    <a href="${pageContext.request.contextPath}/doitac/quanlygoithue" 
+                       class="mobile-nav-link"
+                       style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; border-bottom: 1px solid var(--color-border-light);">
+                        <iconify-icon icon="mdi:package-variant" style="width: 20px; height: 20px; margin-right: 8px;"></iconify-icon>
+                        Quản lý gói thuê
                     </a>
 
                     <div style="display: flex; align-items: center; padding: var(--spacing-md); color: #999; border-bottom: 1px solid var(--color-border-light); opacity: 0.6; cursor: not-allowed;" title="Tính năng đang phát triển">
@@ -380,12 +378,12 @@
                     </a>
                 </c:if>
                 
-                <a href="${pageContext.request.contextPath}/logout" 
+                <button onclick="confirmLogout()" 
                    class="mobile-nav-link"
-                   style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none;">
+                   style="display: flex; align-items: center; padding: var(--spacing-md); color: var(--color-text-secondary); text-decoration: none; background: none; border: none; cursor: pointer; width: 100%; text-align: left;">
                     <iconify-icon icon="mdi:logout" style="width: 20px; height: 20px; margin-right: 8px;"></iconify-icon>
                     Đăng Xuất
-                </a>
+                </button>
             </c:when>
             <c:otherwise>
                 <a href="${pageContext.request.contextPath}/dangnhap" 
@@ -443,4 +441,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+/**
+ * Confirm logout before redirecting
+ * Shows confirmation dialog with 2 buttons: Xác Nhận (logout) and Hủy (cancel)
+ */
+function confirmLogout() {
+    const ctx = '${pageContext.request.contextPath}';
+    if (window.UI && window.UI.confirm) {
+        UI.confirm(
+            'Đăng Xuất',
+            'Bạn có chắc muốn đăng xuất khỏi hệ thống?',
+            function() {
+                // User clicked Xác Nhận (Confirm)
+                window.location.href = ctx + '/logout';
+            }
+            // No callback for Cancel - just closes the dialog
+        );
+    } else {
+        // Fallback to browser confirm if UI utility not available
+        if (confirm('Bạn có chắc muốn đăng xuất khỏi hệ thống?')) {
+            window.location.href = ctx + '/logout';
+        }
+    }
+}
 </script>

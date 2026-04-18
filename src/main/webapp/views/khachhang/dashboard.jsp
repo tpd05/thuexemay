@@ -117,6 +117,96 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
         </footer>
     </div>
 
+    <!-- Modal: Thêm vào giỏ hàng -->
+    <div id="addToCartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: var(--spacing-2xl); max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                <h2 style="font-size: var(--text-xl); font-weight: 700; margin: 0; display: flex; align-items: center; gap: var(--spacing-md);">
+                    <iconify-icon icon="mdi:plus-circle" style="width: 24px; height: 24px; color: var(--color-primary);"></iconify-icon>
+                    Thêm Vào Giỏ Hàng
+                </h2>
+                <button onclick="closeAddToCartModal()" style="background: none; border: none; cursor: pointer; font-size: 24px; color: #999;">×</button>
+            </div>
+
+            <!-- Package Info -->
+            <div id="packageInfo" style="background: var(--color-bg-secondary); border-radius: 8px; padding: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+                <p id="packageName" style="margin: 0; font-weight: 600; color: var(--color-text-primary); font-size: var(--text-base);"></p>
+                <p id="packageBrand" style="margin: var(--spacing-xs) 0 0 0; color: var(--color-primary); font-size: var(--text-sm);"></p>
+            </div>
+
+            <!-- Form Fields -->
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
+                
+                <!-- Start Time -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--color-text-primary);">
+                        Thời Gian Thuê
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="datetime-local" id="modalBatDau" 
+                           style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--color-border-light); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                           onchange="onModalTimeChange()">
+                </div>
+
+                <!-- End Time -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--color-text-primary);">
+                        Thời Gian Trả
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="datetime-local" id="modalKetThuc" 
+                           style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--color-border-light); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                           onchange="onModalTimeChange()">
+                </div>
+
+                <!-- Quantity -->
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: var(--spacing-sm); color: var(--color-text-primary);">
+                        Số Lượng
+                        <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <input type="number" id="modalSoLuong" value="1" min="1" 
+                           style="width: 100%; padding: var(--spacing-sm); border: 1px solid var(--color-border-light); border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                           onchange="onModalQuantityChange()" oninput="onModalQuantityChange()">
+                </div>
+
+                <!-- Availability Check Result -->
+                <div id="availabilityResult" style="display: none; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: var(--spacing-md); color: #166534; font-size: var(--text-sm);">
+                    <p style="margin: 0; font-weight: 600;">
+                        <iconify-icon icon="mdi:check-circle" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;"></iconify-icon>
+                        Xe Còn Trống: <span id="availableCount">0</span>/<span id="totalCount">0</span>
+                    </p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" style="display: none; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; padding: var(--spacing-md); color: #991b1b; font-size: var(--text-sm);">
+                    <p style="margin: 0; font-weight: 600;">
+                        <iconify-icon icon="mdi:alert-circle" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;"></iconify-icon>
+                        <span id="errorText"></span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-2xl); justify-content: flex-end;">
+                <button onclick="closeAddToCartModal()" 
+                        style="padding: var(--spacing-md) var(--spacing-lg); background: white; color: var(--color-text-primary); border: 1px solid var(--color-border-light); border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
+                        onmouseover="this.style.background='var(--color-bg-secondary)'"
+                        onmouseout="this.style.background='white'">
+                    Hủy
+                </button>
+                <button onclick="confirmAddToCart()" 
+                        style="padding: var(--spacing-md) var(--spacing-lg); background: var(--color-primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: var(--spacing-sm);"
+                        onmouseover="this.style.background='var(--color-primary-dark)'; this.style.opacity='0.9'"
+                        onmouseout="this.style.background='var(--color-primary)'; this.style.opacity='1'">
+                    <iconify-icon icon="mdi:check" style="width: 18px; height: 18px;"></iconify-icon>
+                    Thêm Vào Giỏ
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="${pageContext.request.contextPath}/js/ui-utils.js"></script>
     <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
     <script>
@@ -361,7 +451,7 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
                 const hangXe = pkg.querySelector('hangXe')?.textContent || '';
                 const dongXe = pkg.querySelector('dongXe')?.textContent || '';
                 const giaNgay = parseFloat(pkg.querySelector('giaNgay')?.textContent || '0').toLocaleString('vi-VN');
-                const giaGio = parseFloat(pkg.querySelector('giaGio')?.textContent || '0').toLocaleString('vi-VN');
+                const giaTuan = parseFloat(pkg.querySelector('giaTuan')?.textContent || '0').toLocaleString('vi-VN');
                 const phuKien = pkg.querySelector('phuKien')?.textContent || '';
                 const urlHinhAnh = pkg.querySelector('urlHinhAnh')?.textContent || '';
                 
@@ -387,13 +477,13 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
                                         <p style="font-size: var(--text-lg); font-weight: 700; color: var(--color-primary); margin: 0;">` + giaNgay + `đ</p>
                                     </div>
                                     <div>
-                                        <p style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin: 0 0 4px 0; font-weight: 600;">Giá Giờ</p>
-                                        <p style="font-size: var(--text-lg); font-weight: 700; color: var(--color-primary); margin: 0;">` + giaGio + `đ</p>
+                                        <p style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; margin: 0 0 4px 0; font-weight: 600;">Giá Tuần</p>
+                                        <p style="font-size: var(--text-lg); font-weight: 700; color: var(--color-primary); margin: 0;">` + giaTuan + `đ</p>
                                     </div>
                                 </div>
                                 <button class="btn btn-primary" style="width: 100%; padding: var(--spacing-md); font-size: var(--text-sm);" onclick="addToCart(` + maGoiThue + `)">
                                     <iconify-icon icon="mdi:plus-circle" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 4px;"></iconify-icon>
-                                    Thêm Vào Giỏ
+                                    Thêm Vào Giỏ hàng
                                 </button>
                             </div>
                         </div>
@@ -471,52 +561,272 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
         }
 
         function addToCart(maGoiThue) {
-            // Send POST request with quantity = 1 using URLSearchParams for better server compatibility
+            // Store current package ID for modal
+            window.currentModalPackageId = maGoiThue;
+            window.currentModalPackageData = null;
+            window.modalAvailableCount = 0;  // Reset available count
+
+            // Find package data from rendered packages
+            const goiThueContainer = document.getElementById('goiThueContainer');
+            const cards = goiThueContainer.querySelectorAll('.card');
+            
+            cards.forEach(card => {
+                const button = card.querySelector('button[onclick*="addToCart"]');
+                if (button && button.getAttribute('onclick').includes(maGoiThue)) {
+                    // Found the card - extract data
+                    const packageName = card.querySelector('h3')?.textContent || 'N/A';
+                    const packageBrand = card.querySelector('p')?.textContent || 'N/A';
+                    
+                    window.currentModalPackageData = {
+                        maGoiThue: maGoiThue,
+                        tenGoiThue: packageName,
+                        hangXe: packageBrand
+                    };
+                    
+                    // Update modal with package info
+                    document.getElementById('packageName').textContent = packageName;
+                    document.getElementById('packageBrand').textContent = packageBrand;
+                }
+            });
+            
+            // Reset modal fields
+            document.getElementById('modalBatDau').value = '';
+            document.getElementById('modalKetThuc').value = '';
+            document.getElementById('modalSoLuong').value = '1';
+            document.getElementById('modalSoLuong').max = '';  // Reset max
+            document.getElementById('availabilityResult').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Show modal
+            document.getElementById('addToCartModal').style.display = 'flex';
+        }
+
+        function closeAddToCartModal() {
+            document.getElementById('addToCartModal').style.display = 'none';
+            window.currentModalPackageId = null;
+            window.currentModalPackageData = null;
+            window.modalAvailableCount = 0;
+        }
+
+        // Helper: Calculate hours between two datetime-local strings
+        function calculateModalHours(startStr, endStr) {
+            if (!startStr || !endStr) return 0;
+            const start = new Date(startStr);
+            const end = new Date(endStr);
+            const diffMs = end - start;
+            if (diffMs <= 0) return 0;
+            return diffMs / (1000 * 60 * 60);
+        }
+
+        /**
+         * Called when time or quantity changes in modal
+         * Validates input and checks availability
+         */
+        function onModalTimeChange() {
+            const batDauStr = document.getElementById('modalBatDau').value;
+            const ketThucStr = document.getElementById('modalKetThuc').value;
+            const soLuong = parseInt(document.getElementById('modalSoLuong').value) || 1;
+            
+            // Reset messages
+            document.getElementById('availabilityResult').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            // Validate: both times must be filled
+            if (!batDauStr || !ketThucStr) {
+                return; // Wait for both inputs
+            }
+
+            // Validate: end time must be after start time
+            const batDau = new Date(batDauStr);
+            const ketThuc = new Date(ketThucStr);
+            if (batDau >= ketThuc) {
+                showModalError('Thời gian trả phải sau thời gian thuê');
+                return;
+            }
+
+            // Validate: quantity
+            if (soLuong < 1) {
+                document.getElementById('modalSoLuong').value = 1;
+                return;
+            }
+
+            // Check availability
+            checkModalAvailability(window.currentModalPackageId, batDauStr, ketThucStr);
+        }
+
+        /**
+         * Called when quantity input changes
+         * Validates against available vehicles
+         */
+        function onModalQuantityChange() {
+            const soLuongInput = parseInt(document.getElementById('modalSoLuong').value);
+            const availableCount = window.modalAvailableCount || 0;
+
+            // Reset error message first
+            document.getElementById('errorMessage').style.display = 'none';
+
+            // Check if availability has been checked
+            if (availableCount === 0) {
+                // Availability not checked yet, just validate basic constraints
+                if (soLuongInput < 1) {
+                    document.getElementById('modalSoLuong').value = 1;
+                }
+                return;
+            }
+
+            // Check if quantity exceeds available count
+            if (soLuongInput > availableCount) {
+                document.getElementById('modalSoLuong').value = availableCount;
+                showModalError(`Số lượng xe hiện tại vượt quá số lượng xe khả dụng. Tối đa: ${availableCount}`);
+                return;
+            }
+
+            // Valid quantity
+            if (soLuongInput < 1) {
+                document.getElementById('modalSoLuong').value = 1;
+            }
+        }
+
+        /**
+         * Check available vehicles for selected time range
+         */
+        function checkModalAvailability(maGoiThue, batDauStr, ketThucStr) {
+            fetch(ctx + '/khachhang/giohang', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'action=checkAvailable&maGoiThue=' + maGoiThue + 
+                      '&thoiGianBatDau=' + encodeURIComponent(batDauStr) +
+                      '&thoiGianKetThuc=' + encodeURIComponent(ketThucStr)
+            })
+            .then(res => res.text())
+            .then(xml => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(xml, 'application/xml');
+                
+                if (doc.documentElement.nodeName === 'parsererror') {
+                    showModalError('Lỗi kiểm tra xe');
+                    return;
+                }
+                
+                if (doc.querySelector('error')) {
+                    const errorMsg = doc.querySelector('error').textContent;
+                    showModalError(errorMsg);
+                    return;
+                }
+                
+                const soLuongCon = parseInt(doc.querySelector('soLuongCon').textContent);
+                const tongXe = parseInt(doc.querySelector('tongXe').textContent);
+                
+                if (soLuongCon > 0) {
+                    showModalAvailability(soLuongCon, tongXe);
+                } else {
+                    showModalError('Không có xe trống trong khoảng thời gian này');
+                }
+            })
+            .catch(e => {
+                console.error('Error checking availability:', e);
+                showModalError('Lỗi kết nối: ' + e.message);
+            });
+        }
+
+        function showModalAvailability(soLuongCon, tongXe) {
+            // Store available count globally for quantity validation
+            window.modalAvailableCount = soLuongCon;
+            
+            document.getElementById('availableCount').textContent = soLuongCon;
+            document.getElementById('totalCount').textContent = tongXe;
+            document.getElementById('availabilityResult').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Update quantity input max attribute
+            document.getElementById('modalSoLuong').max = soLuongCon;
+            
+            // Reset quantity to 1 if it exceeds available
+            const currentQty = parseInt(document.getElementById('modalSoLuong').value) || 1;
+            if (currentQty > soLuongCon) {
+                document.getElementById('modalSoLuong').value = Math.min(currentQty, soLuongCon);
+            }
+        }
+
+        function showModalError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('availabilityResult').style.display = 'none';
+        }
+
+        /**
+         * Confirm and add to cart with selected time and quantity
+         */
+        function confirmAddToCart() {
+            const maGoiThue = window.currentModalPackageId;
+            const batDauStr = document.getElementById('modalBatDau').value;
+            const ketThucStr = document.getElementById('modalKetThuc').value;
+            const soLuong = parseInt(document.getElementById('modalSoLuong').value);
+            const availableCount = window.modalAvailableCount || 0;
+
+            // Final validation
+            if (!batDauStr || !ketThucStr) {
+                showModalError('Vui lòng nhập cả thời gian thuê và thời gian trả');
+                return;
+            }
+
+            if (soLuong < 1) {
+                showModalError('Số lượng không hợp lệ');
+                return;
+            }
+
+            const batDau = new Date(batDauStr);
+            const ketThuc = new Date(ketThucStr);
+            if (batDau >= ketThuc) {
+                showModalError('Thời gian trả phải sau thời gian thuê');
+                return;
+            }
+
+            // CHECK: Quantity must not exceed available vehicles
+            if (soLuong > availableCount) {
+                showModalError(`Số lượng xe hiện tại vượt quá số lượng xe khả dụng. Tối đa: ${availableCount}`);
+                return;
+            }
+
+            // Send POST request to add to cart
             const params = new URLSearchParams();
             params.append('maGoiThue', maGoiThue);
-            params.append('soLuong', 1);
-            
-            const url = ctx + '/khachhang/themgoivaogio';
-            console.log('[DEBUG] addToCart URL:', url);
-            console.log('[DEBUG] Context path (ctx):', ctx);
-            console.log('[DEBUG] maGoiThue:', maGoiThue);
-            console.log('[DEBUG] Full URL would be:', window.location.origin + url);
-            
-            fetch(url, {
+            params.append('soLuong', soLuong);
+            params.append('thoiGianBatDau', batDauStr);
+            params.append('thoiGianKetThuc', ketThucStr);
+
+            fetch(ctx + '/khachhang/themgoivaogio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                 },
                 body: params.toString()
             })
-            .then(res => {
-                console.log('[DEBUG] Response status:', res.status);
-                console.log('[DEBUG] Response statusText:', res.statusText);
-                return res.text();
-            })
+            .then(res => res.text())
             .then(xml => {
-                console.log('[DEBUG] Response XML:', xml);
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(xml, 'application/xml');
                 
-                // Check response status
                 const statusNode = doc.querySelector('status');
                 const messageNode = doc.querySelector('message');
-                console.log('[DEBUG] Status node:', statusNode?.textContent);
-                console.log('[DEBUG] Message node:', messageNode?.textContent);
                 
                 if (statusNode && statusNode.textContent === 'success') {
-                    UI.toast('Thêm vào giỏ hàng thành công', 'success', 3000);
+                    // Show success message
+                    if (window.UI && window.UI.toast) {
+                        UI.toast('✓ Thêm vào giỏ hàng thành công', 'success', 3000);
+                    } else {
+                        alert('✓ Thêm vào giỏ hàng thành công');
+                    }
+                    // Close modal
+                    closeAddToCartModal();
                 } else {
                     const errorMsg = messageNode ? messageNode.textContent : 'Không thể thêm vào giỏ hàng';
-                    UI.toast(errorMsg, 'error', 3000);
+                    showModalError(errorMsg);
                 }
             })
             .catch(e => {
-                console.error('[DEBUG] Error:', e);
-                console.error('[DEBUG] Error message:', e.message);
-                console.error('[DEBUG] Error stack:', e.stack);
-                UI.toast('Lỗi kết nối server: ' + e.message, 'error', 3000);
+                console.error('Error:', e);
+                showModalError('Lỗi kết nối server: ' + e.message);
             });
         }
 
@@ -526,6 +836,16 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
                 () => {}
             );
         }
+
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('addToCartModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeAddToCartModal();
+                }
+            });
+        });
 
         function escapeHtml(text) {
             const map = {

@@ -167,30 +167,30 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
         }
         
         // Tính giá cho một item dựa trên thời gian
-        function calculatePrice(startStr, endStr, giaNgay, giaGio, soLuong) {
+        function calculatePrice(startStr, endStr, giaNgay, giaTuan, soLuong) {
             if (!startStr || !endStr || soLuong < 1) return 0;
             
             const hours = calculateHours(startStr, endStr);
             if (hours <= 0) return 0;
             
-            const days = Math.floor(hours / 24);
-            const remainingHours = hours - (days * 24);
-            
-            // Tính giá: dùng giá/ngày cho ngày đầy đủ, giá/giờ cho giờ còn lại
-            let price = 0;
-            if (days > 0) {
-                price += days * giaNgay * soLuong;
+            // Calculate price PER UNIT first, then round, then multiply by quantity
+            // This matches backend logic: Math.ceil(giaMotXe) * soLuong
+            let pricePerUnit = 0;
+            if (hours >= 168) {
+                // >= 1 week: weeks × giaTuan + remainingHours × (giaNgay/24)
+                const weeks = Math.floor(hours / 168);
+                const remainingHours = hours - (weeks * 168);
+                const remainingDays = remainingHours / 24;
+                
+                pricePerUnit = (weeks * giaTuan) + (remainingDays * giaNgay);
+            } else {
+                // < 1 week: days × giaNgay + remainingHours × (giaNgay/24)
+                const days = hours / 24;
+                pricePerUnit = days * giaNgay;
             }
-            if (remainingHours > 0) {
-                price += remainingHours * giaGio * soLuong;
-            }
             
-            // Nếu < 1 ngày, dùng giá/giờ
-            if (price === 0 && hours > 0) {
-                price = hours * giaGio * soLuong;
-            }
-            
-            return Math.ceil(price);
+            // Round per unit, then multiply by quantity (match backend)
+            return Math.ceil(pricePerUnit) * soLuong;
         }
         
         // Load giỏ hàng
@@ -238,7 +238,7 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
                             const dongXe = item.querySelector('dongXe')?.textContent || '';
                             const soLuong = parseInt(item.querySelector('soLuong').textContent);
                             const giaNgay = parseFloat(item.querySelector('giaNgay').textContent);
-                            const giaGio = parseFloat(item.querySelector('giaGio').textContent);
+                            const giaTuan = parseFloat(item.querySelector('giaTuan').textContent);
                             
                             console.log('Processing item ' + index, '| maGoiThue:', maGoiThue, '| tenGoiThue:', tenGoiThue, '| soLuong:', soLuong);
                             
@@ -262,7 +262,7 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
                                     hangXe: hangXe,
                                     dongXe: dongXe,
                                     giaNgay: giaNgay,
-                                    giaGio: giaGio,
+                                    giaTuan: giaTuan,
                                     soLuong: soLuong,
                                     batDau: batDauValue,
                                     ketThuc: ketThucValue,
@@ -290,7 +290,7 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
                             });
                             console.log('Final branches for item:', cartState[maGoiThue].branches);
                             
-                            const thanhTien = calculatePrice(batDauValue, ketThucValue, giaNgay, giaGio, soLuong);
+                            const thanhTien = calculatePrice(batDauValue, ketThucValue, giaNgay, giaTuan, soLuong);
                             cartState[maGoiThue].thanhTien = thanhTien;
                             
                             html += '<div class="card" style="padding: var(--spacing-lg); background: white; border: 1px solid var(--color-border-light); border-radius: 12px; position: relative; transition: all 0.2s ease; border-color: var(--color-primary); background-color: rgba(16, 185, 129, 0.01);" id="itemCard_' + maGoiThue + '">' +
@@ -525,7 +525,7 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
             if (!cartState[maGoiThue]) return;
             
             const state = cartState[maGoiThue];
-            const price = calculatePrice(state.batDau, state.ketThuc, state.giaNgay, state.giaGio, state.soLuong);
+            const price = calculatePrice(state.batDau, state.ketThuc, state.giaNgay, state.giaTuan, state.soLuong);
             
             cartState[maGoiThue].thanhTien = price;
             
@@ -1070,6 +1070,30 @@ if (username == null || role == null || !role.equals("KHACH_HANG")) {
             console.log('=== PAGE LOAD - Cart Page ===');
             loadCart();
         });
+
+        /**
+         * Override confirmLogout to show data loss warning
+         * Show warning that unsaved data will be lost
+         */
+        window.confirmLogout = function() {
+            const ctx = '${pageContext.request.contextPath}';
+            if (window.UI && window.UI.confirm) {
+                UI.confirm(
+                    'Đăng Xuất',
+                    '⚠️ Tất cả dữ liệu giỏ hàng chưa lưu sẽ bị mất!\n\nBạn có chắc muốn đăng xuất?',
+                    function() {
+                        // User clicked Xác Nhận (Confirm)
+                        window.location.href = ctx + '/logout';
+                    }
+                    // No callback for Cancel - just closes the dialog
+                );
+            } else {
+                // Fallback to browser confirm
+                if (confirm('⚠️ Tất cả dữ liệu giỏ hàng chưa lưu sẽ bị mất!\n\nBạn có chắc muốn đăng xuất?')) {
+                    window.location.href = ctx + '/logout';
+                }
+            }
+        };
     </script>
 </body>
 </html>

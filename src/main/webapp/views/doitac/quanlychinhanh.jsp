@@ -24,6 +24,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Quản Lý Chi Nhánh - Đối Tác</title>
     <link href="${pageContext.request.contextPath}/dist/tailwind.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/css/globals.css" rel="stylesheet">
@@ -38,11 +39,6 @@
             border-radius: 12px;
             padding: var(--spacing-2xl);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-        
-        .form-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .table-row:hover {
@@ -158,7 +154,7 @@
             font-size: 14px;
             font-weight: 600;
             display: none;
-            z-index: 1000;
+            z-index: 10000; /* Tăng z-index để luôn đè lên modal */
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
@@ -177,6 +173,58 @@
             background: #fef2f2;
             color: #991b1b;
             border-left: 4px solid #dc2626;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none; /* Ẩn mặc định */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            /* Căn modal sát lên trên để select box luôn thả xuống dưới */
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 8vh; 
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: transparent;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #9ca3af;
+            cursor: pointer;
+            z-index: 10;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #ef4444;
         }
 
         @keyframes slideIn {
@@ -212,103 +260,110 @@
             <section class="app-container">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--spacing-3xl); margin-bottom: var(--spacing-3xl);">
                     <h1 style="font-size: var(--text-3xl); font-weight: 700; margin: 0;">Quản Lý Chi Nhánh</h1>
-          
+                    
+                    <button id="btnShowModal" style="background: #10b981; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); transition: all 0.2s ease;">
+                        <iconify-icon icon="mdi:plus-circle" width="20" height="20"></iconify-icon>
+                        Thêm Mới
+                    </button>
                 </div>
 
-                <!-- Form Card -->
-                <div class="form-card" style="margin-bottom: var(--spacing-3xl);">
-                    <div style="display: flex; align-items: center; gap: var(--spacing-md); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--spacing-lg); color: var(--color-text-primary); padding-bottom: var(--spacing-md); border-bottom: 2px solid #e5e7eb;">
-                        <iconify-icon icon="mdi:plus-circle" width="24" height="24" style="color: #10b981;"></iconify-icon>
-                        <span>Thêm Chi Nhánh Mới</span>
-                    </div>
+                <div id="modalThemChiNhanh" class="modal-overlay">
+                    <div class="modal-content">
+                        <span class="close-btn" id="btnCloseModal">&times;</span>
+                        
+                        <div class="form-card" style="margin-bottom: 0;">
+                            <div style="display: flex; align-items: center; gap: var(--spacing-md); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--spacing-lg); color: var(--color-text-primary); padding-bottom: var(--spacing-md); border-bottom: 2px solid #e5e7eb;">
+                                <iconify-icon icon="mdi:plus-circle" width="24" height="24" style="color: #10b981;"></iconify-icon>
+                                <span>Thêm Chi Nhánh Mới</span>
+                            </div>
 
-                    <form id="formThemChiNhanh" method="post" action="<%= ctx %>/doitac/quanlychinhanh">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
-                            <div>
-                                <label for="tenChiNhanh">Tên Chi Nhánh *</label>
-                                <input type="text" id="tenChiNhanh" name="tenChiNhanh" placeholder="Chi Nhánh Trung Tâm" maxlength="100" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
-                            </div>
-                            <div>
-                                <label for="tinh">Tỉnh/Thành Phố *</label>
-                                <select id="tinh" name="tinh" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;">
-                                    <option value="">-- Chọn Tỉnh/Thành Phố --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="xa">Xã/Phường *</label>
-                                <select id="xa" name="xa" required disabled style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;">
-                                    <option value="">-- Chọn Xã/Phường --</option>
-                                </select>
-                            </div>
-                            <div style="grid-column: 1 / -1;">
-                                <label for="diaDiemChiTiet">Địa Chỉ Cụ Thể (Số nhà, Ngõ, Đường...) *</label>
-                                <textarea id="diaDiemChiTiet" name="diaDiemChiTiet" placeholder="VD: Số 123, Ngõ Giang Võ, Khu A..." maxlength="200" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease; resize: vertical; min-height: 80px;"></textarea>
-                            </div>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-2xl);">
-                            <button type="submit" style="background: #10b981; color: white; padding: var(--spacing-sm) var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
-                                <iconify-icon icon="mdi:plus" width="14" height="14"></iconify-icon>
-                                Thêm Chi Nhánh
-                            </button>
-                            <button type="reset" style="background: #f9fafb; color: var(--color-text-primary); padding: var(--spacing-sm) var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
-                                Làm lại
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Notification -->
-                    <div id="notification" class="notification"></div>
-
-                    <!-- Table Section -->
-                    <div style="background: white; border-radius: 12px; padding: var(--spacing-lg); border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg); padding-bottom: var(--spacing-lg); border-bottom: 1px solid #e5e7eb;">
-                            <h2 style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin: 0;">Danh Sách Chi Nhánh</h2>
-                        </div>
-
-                        <div style="overflow-x: auto;">
-                        <% if (danhSach.isEmpty()) { %>
-                            <div style="text-align: center; padding: var(--spacing-3xl); color: #6b7280; font-size: 14px;">
-                                <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
-                                Chưa có chi nhánh nào. Hãy thêm chi nhánh đầu tiên!
-                            </div>
-                        <% } else { %>
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <thead>
-                                    <tr style="background: #f9fafb;">
-                                        <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 50px;">#</th>
-                                        <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 100px;">Mã CN</th>
-                                        <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Tên Chi Nhánh</th>
-                                        <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Địa Điểm</th>
-                                        <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 150px;">Hành Động</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% int stt = 1; for (ChiNhanh cn : danhSach) { %>
-                                    <tr class="table-row" style="border-bottom: 1px solid #e5e7eb;">
-                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><span style="display: inline-block; padding: var(--spacing-xs) var(--spacing-md); background: #10b981; color: white; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;"><%= stt++ %></span></td>
-                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;">#<%= cn.getMaChiNhanh() %></td>
-                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><strong><%= esc(cn.getTenChiNhanh()) %></strong></td>
-                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;"><%= esc(cn.getDiaDiem()) %></td>
-                                        <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px;">
-                                            <div class="action-buttons">
-                                                <button type="button" class="btn-edit btn-disabled" title="Tính năng đang được phát triển">
-                                                    <iconify-icon icon="mdi:pencil" width="14" height="14"></iconify-icon>
-                                                    Sửa
-                                                </button>
-                                                <button type="button" class="btn-delete btn-disabled" title="Tính năng đang được phát triển">
-                                                    <iconify-icon icon="mdi:trash-can" width="14" height="14"></iconify-icon>
-                                                    Xóa
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <% } %>
-                                </tbody>
-                            </table>
-                        <% } %>
+                            <form id="formThemChiNhanh" method="post" action="<%= ctx %>/doitac/quanlychinhanh">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+                                    <div>
+                                        <label for="tenChiNhanh">Tên Chi Nhánh *</label>
+                                        <input type="text" id="tenChiNhanh" name="tenChiNhanh" placeholder="Chi Nhánh Trung Tâm" maxlength="100" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;" />
+                                    </div>
+                                    <div>
+                                        <label for="tinh">Tỉnh/Thành Phố *</label>
+                                        <select id="tinh" name="tinh" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;">
+                                            <option value="">-- Chọn Tỉnh/Thành Phố --</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="xa">Xã/Phường *</label>
+                                        <select id="xa" name="xa" required disabled style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease;">
+                                            <option value="">-- Chọn Xã/Phường --</option>
+                                        </select>
+                                    </div>
+                                    <div style="grid-column: 1 / -1;">
+                                        <label for="diaDiemChiTiet">Địa Chỉ Cụ Thể (Số nhà, Ngõ, Đường...) *</label>
+                                        <textarea id="diaDiemChiTiet" name="diaDiemChiTiet" placeholder="VD: Số 123, Ngõ Giang Võ, Khu A..." maxlength="200" required style="width: 100%; padding: var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 14px; background: #f9fafb; color: var(--color-text-primary); outline: none; transition: all 0.15s ease; resize: vertical; min-height: 80px;"></textarea>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-xs);">
+                                    <button type="submit" style="background: #10b981; color: white; padding: var(--spacing-sm) var(--spacing-md); border: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                        <iconify-icon icon="mdi:plus" width="14" height="14"></iconify-icon>
+                                        Thêm Chi Nhánh
+                                    </button>
+                                    <button type="reset" style="background: #f9fafb; color: var(--color-text-primary); padding: var(--spacing-sm) var(--spacing-md); border: 1px solid #e5e7eb; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.15s ease;">
+                                        Làm lại
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
+                </div>
+
+                <div id="notification" class="notification"></div>
+
+                <div style="background: white; border-radius: 12px; padding: var(--spacing-lg); border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-lg); padding-bottom: var(--spacing-lg); border-bottom: 1px solid #e5e7eb;">
+                        <h2 style="font-size: 16px; font-weight: 700; color: var(--color-text-primary); margin: 0;">Danh Sách Chi Nhánh</h2>
+                    </div>
+
+                    <div style="overflow-x: auto;">
+                    <% if (danhSach.isEmpty()) { %>
+                        <div style="text-align: center; padding: var(--spacing-3xl); color: #6b7280; font-size: 14px;">
+                            <iconify-icon icon="mdi:inbox-outline" width="48" height="48" style="display: block; margin: 0 auto var(--spacing-md); opacity: 0.4;"></iconify-icon>
+                            Chưa có chi nhánh nào. Hãy thêm chi nhánh đầu tiên!
+                        </div>
+                    <% } else { %>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f9fafb;">
+                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 50px;">#</th>
+                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 100px;">Mã CN</th>
+                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Tên Chi Nhánh</th>
+                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981;">Địa Điểm</th>
+                                    <th style="padding: var(--spacing-md) var(--spacing-lg); font-size: 12px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #10b981; width: 150px;">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% int stt = 1; for (ChiNhanh cn : danhSach) { %>
+                                <tr class="table-row" style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><span style="display: inline-block; padding: var(--spacing-xs) var(--spacing-md); background: #10b981; color: white; border-radius: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px;"><%= stt++ %></span></td>
+                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;">#<%= cn.getMaChiNhanh() %></td>
+                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 14px; color: var(--color-text-primary);"><strong><%= esc(cn.getTenChiNhanh()) %></strong></td>
+                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px; color: #6b7280;"><%= esc(cn.getDiaDiem()) %></td>
+                                    <td style="padding: var(--spacing-md) var(--spacing-lg); font-size: 13px;">
+                                        <div class="action-buttons">
+                                            <button type="button" class="btn-edit btn-disabled" title="Tính năng đang được phát triển">
+                                                <iconify-icon icon="mdi:pencil" width="14" height="14"></iconify-icon>
+                                                Sửa
+                                            </button>
+                                            <button type="button" class="btn-delete btn-disabled" title="Tính năng đang được phát triển">
+                                                <iconify-icon icon="mdi:trash-can" width="14" height="14"></iconify-icon>
+                                                Xóa
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    <% } %>
+                    </div>
+                </div>
             </section>
         </main>
 
@@ -319,6 +374,25 @@
 </body>
 <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 <script>
+    // XỬ LÝ MỞ/ĐÓNG MODAL
+    const modalThem = document.getElementById('modalThemChiNhanh');
+    const btnShowModal = document.getElementById('btnShowModal');
+    const btnCloseModal = document.getElementById('btnCloseModal');
+
+    btnShowModal.addEventListener('click', () => {
+        modalThem.classList.add('active');
+    });
+
+    btnCloseModal.addEventListener('click', () => {
+        modalThem.classList.remove('active');
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modalThem) {
+            modalThem.classList.remove('active');
+        }
+    });
+
     const API_BASE = 'https://provinces.open-api.vn/api/v2/';
     let allProvincesData = null;
     let allDistrictsData = null;
@@ -327,19 +401,16 @@
     async function loadProvinces() {
         try {
             console.log('=== LOAD PROVINCES & DISTRICTS ===');
-            
             // Load provinces
             console.log('Loading provinces from:', API_BASE + 'p/');
             const provincesResponse = await fetch(API_BASE + 'p/');
             console.log('Provinces response status:', provincesResponse.status);
-            
             if (!provincesResponse.ok) {
                 throw new Error(`Provinces HTTP ${provincesResponse.status}`);
             }
             
             const provincesData = await provincesResponse.json();
             let provincesList = Array.isArray(provincesData) ? provincesData : (provincesData.data || []);
-            
             if (!Array.isArray(provincesList) || provincesList.length === 0) {
                 throw new Error('Danh sách tỉnh trống');
             }
@@ -351,14 +422,12 @@
             console.log('Loading districts from:', API_BASE + 'w/');
             const districtsResponse = await fetch(API_BASE + 'w/');
             console.log('Districts response status:', districtsResponse.status);
-            
             if (!districtsResponse.ok) {
                 throw new Error(`Districts HTTP ${districtsResponse.status}`);
             }
             
             const districtsData = await districtsResponse.json();
             let districtsList = Array.isArray(districtsData) ? districtsData : (districtsData.data || []);
-            
             if (!Array.isArray(districtsList) || districtsList.length === 0) {
                 throw new Error('Danh sách xã/phường trống');
             }
@@ -374,19 +443,18 @@
             }
             
             tinhSelect.innerHTML = '<option value="">-- Chọn Tỉnh/Thành Phố --</option>';
-            
             allProvincesData.forEach((province, idx) => {
                 const option = document.createElement('option');
                 option.value = province.code;
                 option.textContent = province.name;
                 option.dataset.name = province.name;
                 tinhSelect.appendChild(option);
+        
                 if (idx < 5) console.log(`  [${idx + 1}] ${province.name} (${province.code})`);
             });
             if (allProvincesData.length > 5) console.log(`  ... and ${allProvincesData.length - 5} more`);
             
             console.log('✓ Populated province select\n');
-            
         } catch (error) {
             console.error('❌ Lỗi loadProvinces:', error.message);
             showNotification('Lỗi tải dữ liệu: ' + error.message, 'error', 7000);
@@ -424,7 +492,6 @@
             xaSelect.innerHTML = '<option value="">-- Chọn Xã/Phường --</option>';
             
             console.log('✓ Loaded', filteredDistricts.length, 'districts for province:', selectedCode);
-            
             filteredDistricts.forEach(district => {
                 const option = document.createElement('option');
                 option.value = district.code;
@@ -441,7 +508,7 @@
             xaSelect.innerHTML = '<option value="">-- ' + error.message + ' --</option>';
         }
     });
-
+    
     // Helper function để hiển thị notification
     function showNotification(message, type = 'error', duration = 5000) {
         const notification = document.getElementById('notification');
@@ -520,7 +587,6 @@
         
         // Ghép địa chỉ: Xã/Phường, Tỉnh, Địa chỉ cụ thể
         const fullAddress =  diaDiemChiTiet + ', ' +xaName + ', ' + tinhName ;
-        
         console.log('Building address:');
         console.log('  diaDiemChiTiet:', diaDiemChiTiet);
         console.log('  xaName:', xaName);
@@ -563,13 +629,15 @@
                 const message = messageElement.textContent;
                 
                 console.log('Status:', status, 'Message:', message);
-                
                 showNotification(message, status, 5000);
                 
                 // Reset form if success
                 if (status === 'success') {
                     document.getElementById('formThemChiNhanh').reset();
                     document.getElementById('xa').disabled = true;
+                    // Đóng modal sau khi thêm thành công
+                    modalThem.classList.remove('active');
+                    
                     // Reload page to see new entry
                     setTimeout(() => {
                         location.reload();

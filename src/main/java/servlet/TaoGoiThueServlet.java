@@ -55,7 +55,7 @@ public class TaoGoiThueServlet extends HttpServlet {
                    .append("        <maMauXe>").append(gt.getMaMauXe()).append("</maMauXe>\n")
                    .append("        <tenGoiThue>").append(escapeXml(gt.getTenGoiThue())).append("</tenGoiThue>\n")
                    .append("        <giaNgay>").append(gt.getGiaNgay()).append("</giaNgay>\n")
-                   .append("        <giaGio>").append(gt.getGiaGio()).append("</giaGio>\n")
+                   .append("        <giaTuan>").append(gt.getGiaTuan()).append("</giaTuan>\n")
                    .append("        <phuThu>").append(gt.getPhuThu()).append("</phuThu>\n")
                    .append("    </goiThue>\n");
             }
@@ -83,7 +83,7 @@ public class TaoGoiThueServlet extends HttpServlet {
         String tenGoiThue    = request.getParameter("tenGoiThue");
         String phuKien       = request.getParameter("phuKien");
         String giaNgayStr    = request.getParameter("giaNgay");
-        String giaGioStr     = request.getParameter("giaGio");
+        String giaTuanStr    = request.getParameter("giaTuan");
         String phuThuStr     = request.getParameter("phuThu");
 
         // Validate bắt buộc
@@ -99,17 +99,17 @@ public class TaoGoiThueServlet extends HttpServlet {
         if (giaNgayStr == null || giaNgayStr.trim().isEmpty()) {
             guiPhanHoiXML(response, 400, "error", "Giá ngày không được để trống"); return;
         }
-        if (giaGioStr == null || giaGioStr.trim().isEmpty()) {
-            guiPhanHoiXML(response, 400, "error", "Giá giờ không được để trống"); return;
+        if (giaTuanStr == null || giaTuanStr.trim().isEmpty()) {
+            guiPhanHoiXML(response, 400, "error", "Giá tuần không được để trống"); return;
         }
 
         int maMauXe, maChiNhanh;
-        float giaNgay, giaGio, phuThu;
+        float giaNgay, giaTuan, phuThu;
         try {
             maMauXe    = Integer.parseInt(maMauXeStr.trim());
             maChiNhanh = Integer.parseInt(maChiNhanhStr.trim());
             giaNgay    = Float.parseFloat(giaNgayStr.trim());
-            giaGio     = Float.parseFloat(giaGioStr.trim());
+            giaTuan    = Float.parseFloat(giaTuanStr.trim());
             phuThu     = (phuThuStr != null && !phuThuStr.trim().isEmpty())
                             ? Float.parseFloat(phuThuStr.trim()) : 0f;
         } catch (NumberFormatException e) {
@@ -121,8 +121,8 @@ public class TaoGoiThueServlet extends HttpServlet {
         if (giaNgay <= 0) {
             guiPhanHoiXML(response, 400, "error", "Giá ngày phải lớn hơn 0"); return;
         }
-        if (giaGio <= 0) {
-            guiPhanHoiXML(response, 400, "error", "Giá giờ phải lớn hơn 0"); return;
+        if (giaTuan <= 0) {
+            guiPhanHoiXML(response, 400, "error", "Giá tuần phải lớn hơn 0"); return;
         }
         if (phuThu < 0) {
             guiPhanHoiXML(response, 400, "error", "Phụ thu không được âm"); return;
@@ -135,7 +135,7 @@ public class TaoGoiThueServlet extends HttpServlet {
         goiThue.setTenGoiThue(tenGoiThue.trim());
         goiThue.setPhuKien(phuKien != null ? phuKien.trim() : "");
         goiThue.setGiaNgay(giaNgay);
-        goiThue.setGiaGio(giaGio);
+        goiThue.setGiaTuan(giaTuan);
         goiThue.setPhuThu(phuThu);
 
         try {

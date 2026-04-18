@@ -41,8 +41,8 @@ public class DonThueDAO {
     // Lấy danh sách đơn thuê theo userID
     public List<DonThue> layDanhSachByUserID(int userID, Connection con) throws Exception {
         List<DonThue> list = new ArrayList<>();
-        String SQL = "select maDonThue, userID, diaChiNhanXe, trangThai, ngayTao " +
-                     "from donthue where userID = ? order by ngayTao DESC";
+        String SQL = "select maDonThue, userID, diaChiNhanXe, trangThai " +
+                     "from donthue where userID = ? order by maDonThue DESC";
         try (PreparedStatement pstm = con.prepareStatement(SQL)) {
             pstm.setInt(1, userID);
             try (ResultSet rs = pstm.executeQuery()) {
@@ -52,7 +52,6 @@ public class DonThueDAO {
                     dt.setUserID(rs.getInt("userID"));
                     dt.setDiaChiNhanXe(rs.getString("diaChiNhanXe"));
                     dt.setTrangThai(rs.getString("trangThai"));
-                    dt.setNgayTao(rs.getTimestamp("ngayTao"));
                     list.add(dt);
                 }
             }
@@ -62,7 +61,7 @@ public class DonThueDAO {
     
     // Lấy thông tin đơn thuê theo maDonThue (kèm chi tiết)
     public DonThue layDonThueTheoId(int maDonThue, Connection con) throws Exception {
-        String SQL = "select maDonThue, userID, diaChiNhanXe, trangThai, ngayTao " +
+        String SQL = "select maDonThue, userID, diaChiNhanXe, trangThai " +
                      "from donthue where maDonThue = ?";
         try (PreparedStatement pstm = con.prepareStatement(SQL)) {
             pstm.setInt(1, maDonThue);
@@ -73,7 +72,6 @@ public class DonThueDAO {
                     dt.setUserID(rs.getInt("userID"));
                     dt.setDiaChiNhanXe(rs.getString("diaChiNhanXe"));
                     dt.setTrangThai(rs.getString("trangThai"));
-                    dt.setNgayTao(rs.getTimestamp("ngayTao"));
                     
                     String sqlChiTiet = "select maChiTiet, maDonThue, maXe, maGoiThue, " +
                                        "thoiGianBatDau, thoiGianKetThuc, thoiGianTra, donGia " +

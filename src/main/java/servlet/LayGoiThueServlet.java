@@ -59,7 +59,7 @@ public class LayGoiThueServlet extends HttpServlet {
         	       .append("        <tenGoiThue>").append(escapeXml(gt.getTenGoiThue())).append("</tenGoiThue>\n")
         	       .append("        <phuKien>").append(escapeXml(gt.getPhuKien())).append("</phuKien>\n")
         	       .append("        <giaNgay>").append(gt.getGiaNgay()).append("</giaNgay>\n")
-        	       .append("        <giaGio>").append(gt.getGiaGio()).append("</giaGio>\n")
+        	       .append("        <giaTuan>").append(gt.getGiaTuan()).append("</giaTuan>\n")
         	       .append("        <phuThu>").append(gt.getPhuThu()).append("</phuThu>\n")
         	       .append("    </goiThue>\n");
         	}

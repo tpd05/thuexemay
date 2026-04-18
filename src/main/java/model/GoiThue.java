@@ -8,12 +8,12 @@ public class GoiThue {
     private String tenGoiThue;
     private String phuKien;
     private float giaNgay;
-    private float giaGio;
+    private float giaTuan;
     private float phuThu;
     public GoiThue() {}
 
     public GoiThue(int maGoiThue, int maMauXe, int maDoiTac, int maChiNhanh,
-                   String tenGoiThue, String phuKien, float giaNgay, float giaGio,
+                   String tenGoiThue, String phuKien, float giaNgay, float giaTuan,
                    float phuThu) {
         this.maGoiThue = maGoiThue;
         this.maMauXe = maMauXe;
@@ -22,7 +22,7 @@ public class GoiThue {
         this.tenGoiThue = tenGoiThue;
         this.phuKien = phuKien;
         this.giaNgay = giaNgay;
-        this.giaGio = giaGio;
+        this.giaTuan = giaTuan;
         this.phuThu = phuThu;
     }
 
@@ -82,12 +82,12 @@ public class GoiThue {
 		this.giaNgay = giaNgay;
 	}
 
-	public float getGiaGio() {
-		return giaGio;
+	public float getGiaTuan() {
+		return giaTuan;
 	}
 
-	public void setGiaGio(float giaGio) {
-		this.giaGio = giaGio;
+	public void setGiaTuan(float giaTuan) {
+		this.giaTuan = giaTuan;
 	}
 
 	public float getPhuThu() {

@@ -82,7 +82,9 @@ public class DonThueService {
 					// Convert to java.util.Date for JSTL fmt:formatDate
 					ct.setThoiGianBatDauDate(convertLocalDateTimeToDate(mh.getThoiGianBatDau()));
 					ct.setThoiGianKetThucDate(convertLocalDateTimeToDate(mh.getThoiGianKetThuc()));
-					ct.setDonGia((int) mh.tinhTien());
+				// Calculate price per vehicle (divide by soLuong since tinhTien() already multiplies)
+				double giaMotXe = mh.tinhTien() / mh.getSoLuong();
+				ct.setDonGia((int) Math.ceil(giaMotXe));
 
 				// Lấy thông tin chi tiết xe
 					XeMay xeMay = xeDAO.timXeTheoId(maXe, con);

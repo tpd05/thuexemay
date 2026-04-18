@@ -1,8 +1,6 @@
 package servlet;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,7 +8,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import model.ChiNhanh;
 import model.DoiTac;
 import model.KhachHang;
 import model.NguoiDung;
@@ -87,30 +84,9 @@ public class DangKyServlet extends HttpServlet {
             nd.setEmail(email != null ? email : "");
             nd.setSoCCCD(cccd);
 
-            List<ChiNhanh> listChiNhanh = new ArrayList<>();
-
-            int i = 0;
-            while (true) {
-                String ten = request.getParameter("tenChiNhanh_" + i);
-                String dia = request.getParameter("diaDiem_" + i);
-
-                if (ten == null || dia == null) break;
-
-                if (ten.trim().isEmpty() || dia.trim().isEmpty()) {
-                    i++;
-                    continue;
-                }
-
-                ChiNhanh cn = new ChiNhanh();
-                cn.setTenChiNhanh(ten);
-                cn.setDiaDiem(dia);
-
-                listChiNhanh.add(cn);
-                i++;
-            }
-
+            // Branch registration removed - partners add branches after login
             if ("DOI_TAC".equals(role)) {
-                authService.dangKyTaiKhoanDoiTac(tk, nd, new DoiTac(), listChiNhanh);
+                authService.dangKyTaiKhoanDoiTac(tk, nd, new DoiTac());
             } else {
                 authService.dangKyTaiKhoanKhachHang(tk, nd, new KhachHang());
             }

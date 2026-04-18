@@ -82,7 +82,7 @@ public class GioHangServlet extends HttpServlet {
 					out.println("      <tenGoiThue>" + (goiThue != null ? escapeXml(goiThue.getTenGoiThue()) : "N/A") + "</tenGoiThue>");
 					out.println("      <soLuong>" + mh.getSoLuong() + "</soLuong>");
 					out.println("      <giaNgay>" + (goiThue != null ? goiThue.getGiaNgay() : 0) + "</giaNgay>");
-					out.println("      <giaGio>" + (goiThue != null ? goiThue.getGiaGio() : 0) + "</giaGio>");
+					out.println("      <giaTuan>" + (goiThue != null ? goiThue.getGiaTuan() : 0) + "</giaTuan>");
 					if (mh.getThoiGianBatDau() != null) {
 						out.println("      <thoiGianBatDau>" + mh.getThoiGianBatDau() + "</thoiGianBatDau>");
 					}

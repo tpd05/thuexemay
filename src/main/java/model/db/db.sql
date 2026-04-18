@@ -95,7 +95,7 @@ CREATE TABLE GoiThue (
     tenGoiThue VARCHAR(100),
     phuKien TEXT,
     giaNgay FLOAT,
-    giaGio FLOAT,
+    giaTuan FLOAT,
     phuThu FLOAT,
     FOREIGN KEY (maMauXe) REFERENCES MauXe(maMauXe),
     FOREIGN KEY (maDoiTac) REFERENCES DoiTac(maDoiTac),
@@ -161,17 +161,6 @@ CREATE TABLE ThanhToan (
         ON DELETE CASCADE
 );
 
--- 15. HoanTien
-CREATE TABLE HoanTien (
-    maHoanTien INT PRIMARY KEY AUTO_INCREMENT,
-    maDonThue INT,
-    soTien INT,
-    lyDo TEXT,
-    trangThai VARCHAR(50),
-    FOREIGN KEY (maDonThue) REFERENCES DonThue(maDonThue)
-        ON DELETE CASCADE
-);
-
 -- 16. DanhGiaTraiNghiemThue
 CREATE TABLE DanhGiaTraiNghiemThue (
     maDanhGia INT PRIMARY KEY AUTO_INCREMENT,
@@ -185,21 +174,4 @@ CREATE TABLE DanhGiaTraiNghiemThue (
     FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
 );
 
--- 17. DanhSachMongMuon
-CREATE TABLE DanhSachMongMuon (
-    maDS INT PRIMARY KEY AUTO_INCREMENT,
-    userID INT,
-    FOREIGN KEY (userID) REFERENCES TaiKhoan(userID)
-        ON DELETE CASCADE
-);
-
--- 18. WishListItems
-CREATE TABLE MucDanhSachMongMuon (
-    maWishList INT,
-    maGoiThue INT,
-    PRIMARY KEY (maWishList, maGoiThue),
-    FOREIGN KEY (maWishList) REFERENCES DanhSachMongMuon(maDS)
-        ON DELETE CASCADE,
-    FOREIGN KEY (maGoiThue) REFERENCES GoiThue(maGoiThue)
-);
 

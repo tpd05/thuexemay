@@ -2,15 +2,12 @@ package service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 
-import dao.ChiNhanhDAO;
 import dao.DoiTacDAO;
 import dao.GioHangDAO;
 import dao.KhachHangDAO;
 import dao.NguoiDungDao;
 import dao.TaiKhoanDAO;
-import model.ChiNhanh;
 import model.DoiTac;
 import model.GioHang;
 import model.KhachHang;
@@ -94,11 +91,10 @@ public class AuthService {
 	}
 
 	//Đăng ký tài khoản đối tác
-	public boolean dangKyTaiKhoanDoiTac(TaiKhoan tk, NguoiDung nd, DoiTac dt, List<ChiNhanh> danhSachChiNhanh)
+	public boolean dangKyTaiKhoanDoiTac(TaiKhoan tk, NguoiDung nd, DoiTac dt)
 			throws SQLException {
 
 		DoiTacDAO dtdao = new DoiTacDAO();
-		ChiNhanhDAO cndao = new ChiNhanhDAO();
 
 		Connection con = null;
 
@@ -115,11 +111,7 @@ public class AuthService {
 			dt.setMaDoiTac(maDoiTac);
 			dt.setUserID(userID);
 
-			// Thêm chi nhánh với maDoiTac (không dùng userID)
-			for (ChiNhanh cn : danhSachChiNhanh) {
-				cn.setMaDoiTac(maDoiTac);
-				cndao.themChiNhanh(cn, con);
-			}
+			// Branch registration removed - partners add branches after login via separate feature
 
 			con.commit();
 			return true;

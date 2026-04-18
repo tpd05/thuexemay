@@ -49,9 +49,9 @@ public class DanhSachGoiThueServlet extends HttpServlet {
 				out.println("    \"min\": " + stats.getOrDefault("minNgay", 0) + ",");
 				out.println("    \"max\": " + stats.getOrDefault("maxNgay", 0));
 				out.println("  },");
-				out.println("  \"giaGio\": {");
-				out.println("    \"min\": " + stats.getOrDefault("minGio", 0) + ",");
-				out.println("    \"max\": " + stats.getOrDefault("maxGio", 0));
+				out.println("  \"giaTuan\": {");
+				out.println("    \"min\": " + stats.getOrDefault("minTuan", 0) + ",");
+				out.println("    \"max\": " + stats.getOrDefault("maxTuan", 0));
 				out.println("  }");
 				out.println("}");
 			} catch (Exception e) {
@@ -145,7 +145,7 @@ public class DanhSachGoiThueServlet extends HttpServlet {
 					out.println("    <dongXe>" + dongXe + "</dongXe>");
 					out.println("    <urlHinhAnh>" + urlHinhAnh + "</urlHinhAnh>");
 					out.println("    <giaNgay>" + goiThue.getGiaNgay() + "</giaNgay>");
-					out.println("    <giaGio>" + goiThue.getGiaGio() + "</giaGio>");
+					out.println("    <giaTuan>" + goiThue.getGiaTuan() + "</giaTuan>");
 					out.println("    <phuThu>" + goiThue.getPhuThu() + "</phuThu>");
 					out.println("    <phuKien>" + (goiThue.getPhuKien() != null ? escapeXml(goiThue.getPhuKien()) : "") + "</phuKien>");
 					out.println("  </goiThue>");
@@ -196,7 +196,7 @@ public class DanhSachGoiThueServlet extends HttpServlet {
 					out.println("    <dongXe>" + dongXe + "</dongXe>");
 					out.println("    <urlHinhAnh>" + urlHinhAnh + "</urlHinhAnh>");
 					out.println("    <giaNgay>" + goiThue.getGiaNgay() + "</giaNgay>");
-					out.println("    <giaGio>" + goiThue.getGiaGio() + "</giaGio>");
+					out.println("    <giaTuan>" + goiThue.getGiaTuan() + "</giaTuan>");
 					out.println("    <phuThu>" + goiThue.getPhuThu() + "</phuThu>");
 
 					out.println("    <phuKien>" + (goiThue.getPhuKien() != null ? escapeXml(goiThue.getPhuKien()) : "") + "</phuKien>");
